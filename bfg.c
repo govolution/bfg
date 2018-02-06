@@ -26,7 +26,7 @@ Web: https://github.com/govolution/bfg
 #include "defs.h"
 
 int get_filesize(char *fvalue);
-unsigned char* load_textfile(char *fvalue, unsigned char *buf, int size2);
+unsigned char* load_file(char *fvalue, unsigned char *buf, int size2);
 void exec_shellcode(unsigned char *shellcode);
 void exec_shellcode64(unsigned char *shellcode);
 
@@ -73,7 +73,9 @@ int main (int argc, char **argv)
 		printf("exec shellcode from file\n");
 	#endif
 		size = get_filesize(fvalue);
-		buffer = load_textfile(fvalue, buffer, size);
+		buffer = load_file(fvalue, buffer, size);
+		//shellcode=buffer;
+		unsigned char *buf =buffer;
 #endif
 	#ifdef FVALUE
 		size = strlen (FVALUE);
@@ -85,7 +87,7 @@ int main (int argc, char **argv)
 		#ifdef PRINT_DEBUG
 		printf("exec shellcode without decode_shellcode\n");
 		#endif
-		shellcode = buf;
+		shellcode = buf;	//buf is from defs.h if shellcode is included
 	#endif
 	#endif
 	#ifndef X64 
@@ -123,10 +125,10 @@ int get_filesize(char *fvalue)
 
 #if defined(LVALUE) || defined(UVALUE)
 // return pointer to text buffer
-unsigned char* load_textfile(char *fvalue, unsigned char *buffer, int size)
+unsigned char* load_file(char *fvalue, unsigned char *buffer, int size)
 {
 	#ifdef PRINT_DEBUG
-		printf("load_textfile called: fvalue: %s, size: %d\n", fvalue, size);
+		printf("load_file called: fvalue: %s, size: %d\n", fvalue, size);
 	#endif
 
 	//allocate buffer, open file, read file to the buffer, close the file
@@ -139,7 +141,7 @@ unsigned char* load_textfile(char *fvalue, unsigned char *buffer, int size)
 	FILE *fp = fopen(fvalue, "rb");
 	if (fp == NULL)
 	{
-		printf("load_textfile, %s not found\n", fvalue);
+		printf("load_file, %s not found\n", fvalue);
 		return 0;
 	}
 
