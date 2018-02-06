@@ -3,8 +3,9 @@ Author: Daniel Sauder
 License: https://www.gnu.org/licenses/gpl.txt or LICENSE file
 Web: https://github.com/govolution/bfg
 */
-
+ 
 #include <getopt.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
