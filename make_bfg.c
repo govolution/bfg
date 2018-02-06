@@ -157,10 +157,6 @@ int main (int argc, char **argv)
 	if(print_debug)
 		fprintf (file_def, "#define PRINT_DEBUG\n");
 
-	//write SANDBOX_FOPEN to defs.h
-	if(Fflag)
-		fprintf (file_def, "#define SANDBOX_FOPEN\n");
-
 	//write X64 to defs.h
 	if(Xflag)
 		fprintf (file_def, "#define X64\n");
