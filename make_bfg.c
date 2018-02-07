@@ -172,7 +172,6 @@ void print_help()
 	printf("Options:\n");
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
 	printf("-f compile shellcode into .exe, needs filename of shellcode file\n");
-	printf("-k \"killswitch\" sandbox evasion with gethostbyname\n");
 	printf("-X compile for 64 bit\n");
 	printf("-p print debug information\n");
 	printf("-q quiet mode (hide console window)\n");
