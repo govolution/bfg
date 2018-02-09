@@ -4,6 +4,7 @@ BFG
 What & Why:
 - bfg is a tool for executing and injecting shellcode
 - it uses some concepts from https://github.com/govolution/avet
+- not meant to be another antivirus evasion tool
 - this readme applies for Kali 2 (64bit) and tdm-gcc
 
 How to install tdm-gcc with wine:
