@@ -9,6 +9,7 @@ Web: https://github.com/govolution/bfg
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 void print_start();
 void print_help();
@@ -24,6 +25,7 @@ int main (int argc, char **argv)
 	char *dvalue = NULL;
 	char *evalue = NULL;
 	char *fvalue = NULL;
+	char *ivalue = NULL;
 	int hflag = 0;
 	int Fflag = 0;
 	int Xflag = 0;
@@ -37,7 +39,8 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	while ((c = getopt (argc, argv, "d:e:f:u:w:lphFXq")) != -1)
+	//deleted w,u
+	while ((c = getopt (argc, argv, "d:e:f:i:lphFXq")) != -1)
 		switch (c)
 		{
 			case 'd':
@@ -51,6 +54,9 @@ int main (int argc, char **argv)
 				break;
 			case 'f':
 				fvalue = optarg;
+				break;
+			case 'i':
+				ivalue = optarg;
 				break;
 			case 'h':
 				hflag = 1;
@@ -73,6 +79,8 @@ int main (int argc, char **argv)
 				else if (optopt == 'e')
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 				else if (optopt == 'f')
+					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+				else if (optopt == 'i')
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 				else if (isprint (optopt))
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
@@ -144,6 +152,21 @@ int main (int argc, char **argv)
 		fclose (file_def);
 	}
 
+	//inject
+	if(ivalue)
+	{
+		if (strcmp(ivalue, "shellcode")==0)
+		{
+			printf("Write INJECT_SHELLCODE\n");
+			FILE *file_def;
+			file_def = fopen ("defs.h","a");
+			fprintf (file_def, "#define INJECT_SHELLCODE\n");
+			fclose (file_def);
+		}
+		else
+			printf("-i %s unknown option\n");
+	}
+
 	//write flags to defs.h
 	FILE *file_def;
 	file_def = fopen ("defs.h","a");
@@ -170,6 +193,8 @@ int main (int argc, char **argv)
 void print_help()
 {
 	printf("Options:\n");
+	printf("-i inject\n");
+	printf("\t-i shellcode for injecting shellcode\n");
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
 	printf("-f compile shellcode into .exe, needs filename of shellcode file\n");
 	printf("-X compile for 64 bit\n");
