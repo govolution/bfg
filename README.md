@@ -42,8 +42,26 @@ root@kalidan:~/tools/bfg# ./build/build_win32_meterpreter_rev_https_shikata_load
 Here are some explained examples for building the .exe files from the build directory. Please have a look at the other build scripts for further explanation.
 
 
-Example 1
----------
+Examples
+--------
+Please refer the files in the build directory.
 
-TBD.
+build/build_win32_meterpreter_rev_https_50xshikata.sh
+Loads and execute a shellcode, the shellcode is compiled into the .exe file.
 
+build/build_win32_meterpreter_rev_https_shikata_loadfile.sh 
+Loads and execute a shellcode from a file.
+
+build/build_win32_msgbox_inject_shellcode.sh
+Inject a shellcode into a process by PID.
+
+build/build_win32_msgbox_inject_shellcode_loadfile.sh
+Inject a shellcode into a process by PID.
+
+build/build_win32_msgbox_inject_shellcode_imagename.sh
+Loads and execute a shellcode that is injected into a process. Therefore the name of the process (imagename) has to be specified.
+
+
+bfg_fabric.py
+-------------
+bfg_fabric is an assistant, that loads all build scripts in the build directory (name has to be build*.sh) and then lets the user edit the settings line by line.
