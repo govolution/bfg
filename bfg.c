@@ -104,7 +104,14 @@ int main (int argc, char **argv)
 	#endif
 	
 	#ifdef INJECT_SHELLCODE
-		inject_sc_process(shellcode, atoi(argv[1]));
+		int tmp;
+		#ifndef LVALUE
+			tmp=atoi(argv[1]);
+		#endif
+		#ifdef LVALUE
+			tmp=atoi(argv[2]);
+		#endif
+		inject_sc_process(shellcode, tmp);
 	#endif
 	}
 
