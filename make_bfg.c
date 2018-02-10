@@ -40,7 +40,6 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	//deleted w,u
 	while ((c = getopt (argc, argv, "d:e:f:i:lphFXqP")) != -1)
 		switch (c)
 		{
