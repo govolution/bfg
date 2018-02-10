@@ -5,10 +5,11 @@
 # or enter $win32_compiler="mycompiler" here
 . build/global_win32.sh
 # simple messagebox 
-msfvenom -p windows/messagebox -b '\x00' -f c -a x86 --platform Windows > sc.txt
+msfvenom -p windows/messagebox -b '\x00' -f raw -a x86 --platform Windows > sc.bin
 # call make_avet, compile shellcode into the executable
-./make_bfg -f sc.txt -i shellcode -P
+./make_bfg -l -P
 # compile 
 $win32_compiler -o bfg.exe bfg.c
 # cleanup
-rm sc.txt && echo "" > defs.h
+echo "" > defs.h
+# call with bfg.exe sc.bin PID
