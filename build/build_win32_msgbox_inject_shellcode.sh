@@ -6,7 +6,7 @@
 . build/global_win32.sh
 # simple messagebox 
 msfvenom -p windows/messagebox -b '\x00' -f c -a x86 --platform Windows > sc.txt
-# call make_avet, compule shellcode into the executable
+# call make_avet, compile shellcode into the executable
 ./make_bfg -f sc.txt -i shellcode -P
 # compile 
 $win32_compiler -o bfg.exe bfg.c
