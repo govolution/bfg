@@ -14,4 +14,4 @@ echo "" > defs.h
 $win32_compiler -o bfg.exe bfg.c 
 # cleanup
 echo "" > defs.h
-# call like C:\>bfg "c:\Program Files (x86)\KeePass Password Safe\KeePass.exe"
+# call like: C:\>bfg "c:\Program Files (x86)\KeePass Password Safe\KeePass.exe"
