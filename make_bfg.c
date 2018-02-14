@@ -42,8 +42,9 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	while ((c = getopt (argc, argv, "d:e:f:i:I:lphFXqP")) != -1)
-		switch (c)
+	while ((c = getopt (argc, argv, "d:e:f:i:H:I:lphFXqP")) != -1)	
+	{		
+		switch (c)			
 		{
 			case 'd':
 				dvalue = optarg;
@@ -65,7 +66,7 @@ int main (int argc, char **argv)
 			    break;
 			case 'H':
 				Hvalue = optarg;
-					break;
+				break;
 			case 'h':
 				hflag = 1;
 				break;
@@ -94,7 +95,9 @@ int main (int argc, char **argv)
 				else if (optopt == 'i')
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 				else if (optopt == 'I')
-					fprintf (stderr, "Option -%c requires an argument.\n", optopt);				
+					fprintf (stderr, "Option -%c requires an argument.\n", optopt);	
+				else if (optopt == 'H')
+					fprintf (stderr, "Option -%c requires an argument.\n", optopt);	
 				else if (isprint (optopt))
 					fprintf (stderr, "Unknown option `-%c'.\n", optopt);
 				else
@@ -103,6 +106,7 @@ int main (int argc, char **argv)
 			default:
 				abort ();
 		}
+	}
 
 	// print help
 	if (hflag)
@@ -195,7 +199,7 @@ int main (int argc, char **argv)
 		
 		for(int i = 0;;i++) 
 		{
-			if ((currentByte = fgetc(file_def)) == EOF) break;			
+			if ((currentByte = fgetc(file_exe)) == EOF) break;			
 			if (i != 0) fprintf(file_def, ",");
 			if ((i % 12) == 0) fprintf(file_def, "\n\t");
 			fprintf(file_def, "0x%.2X", (unsigned char) currentByte);
