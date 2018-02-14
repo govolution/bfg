@@ -56,7 +56,7 @@ build/build_win32_msgbox_inject_shellcode.sh
 Inject a shellcode into a process by PID.
 
 build/build_win32_msgbox_inject_shellcode_loadfile.sh
-Inject a shellcode into a process by PID.
+Inject and load a shellcode into a process by PID.
 
 build/build_win32_msgbox_inject_shellcode_imagename.sh
 Loads and execute a shellcode that is injected into a process. Therefore the name of the process (imagename) has to be specified.
