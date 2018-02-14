@@ -11,6 +11,7 @@ echo "" > defs.h
 # call make_bfg, compile payload into executable
 ./make_bfg -H payloads/hello.exe
 # compile 
-$win32_compiler -o bfg.exe bfg.c
+$win32_compiler -o bfg.exe bfg.c 
 # cleanup
 echo "" > defs.h
+# call like C:\>bfg "c:\Program Files (x86)\KeePass Password Safe\KeePass.exe"
