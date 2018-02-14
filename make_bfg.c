@@ -191,7 +191,7 @@ int main (int argc, char **argv)
 		FILE *file_exe = fopen(Hvalue, "r");
 		FILE *file_def = fopen("defs.h", "a");
 		
-		unsigned char currentByte = 0;
+		int currentByte = 0;	// use integer type to serve the needs of fgetc
 		long currentSize = 0;
 	
 		// Read data from excutable file and write bytewise into array "payload" in defs.h
