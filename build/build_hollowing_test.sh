@@ -6,12 +6,14 @@
 . build/global_win32.sh
 # build 32 bit hello executable
 $win32_compiler -o payloads/hello.exe payloads/hello.c
+strip payloads/hello.exe
 # assume empty defs.h, cleanup
 echo "" > defs.h
 # call make_bfg, compile payload into executable
 ./make_bfg -H payloads/hello.exe
 # compile 
 $win32_compiler -o bfg.exe bfg.c 
+strip bfg.exe
 # cleanup
 echo "" > defs.h
-# call like C:\>bfg "c:\Program Files (x86)\KeePass Password Safe\KeePass.exe"
+# call like C:\> bfg "c:\Program Files (x86)\KeePass Password Safe\KeePass.exe"

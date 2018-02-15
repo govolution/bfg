@@ -12,6 +12,7 @@ echo "" > defs.h
 ./make_bfg -l -P
 # compile 
 $win32_compiler -o bfg.exe bfg.c
+strip bfg.exe
 # cleanup
 echo "" > defs.h
 # call with bfg.exe sc.bin PID

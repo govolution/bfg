@@ -12,5 +12,6 @@ echo "" > defs.h
 ./make_bfg -f sc.txt -i shellcode -I KeePass.exe -p
 # compile 
 $win32_compiler -o bfg.exe bfg.c -lpsapi
+strip bfg.exe
 # cleanup
 rm sc.txt && echo "" > defs.h

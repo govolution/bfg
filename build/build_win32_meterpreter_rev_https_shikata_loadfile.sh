@@ -12,7 +12,7 @@ echo "" > defs.h
 ./make_bfg -l
 # compile to pwn.exe file
 $win32_compiler -o pwn.exe bfg.c
-#strip pwn.exe
+strip pwn.exe
 # cleanup
 echo "" > defs.h
 # call your programm with pwn.exe sc.bin
