@@ -20,16 +20,17 @@ $ gcc -o make_bfg make_bfg.c
 
 The purpose of make_bfg is to preconfigure a definition file (defs.h) so that the source code can be compiled in the next step. Let's have a look at the options from make_avet, examples will be given below:
 
+-i inject
+	-i shellcode for injecting shellcode
+-H hollow target process and insert payload executable: pwn.exe svchost.exe
+	-H mypayload.exe to set payload to inserted into the hollowed process
+-P inject shellcode by PID as argument, call pwn.exe PID
+-I inject shellcode by image name, call for example: pwn.exe keepass.exe
 -l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt
-
--f compile shellcode into .exe, needs filename of shellcode file
-
+-f compile and execute shellcode into .exe, needs filename of shellcode file
 -X compile for 64 bit
-
 -p print debug information
-
--q quiet mode (hide windows)
-
+-q quiet mode (hide console window)
 -h help
 
 Of course it is possible to run all commands step by step from command line. But it is strongly recommended to use build scripts or the bfg_fabric.py.
@@ -61,6 +62,8 @@ Inject and load a shellcode into a process by PID.
 build/build_win32_msgbox_inject_shellcode_imagename.sh
 Loads and execute a shellcode that is injected into a process. Therefore the name of the process (imagename) has to be specified.
 
+build/build_hollowing_hello_exe.sh
+Hollow target process and insert payload executable (here a simple exe with a messagebox).
 
 bfg_fabric.py
 -------------
