@@ -22,7 +22,6 @@ int main (int argc, char **argv)
 
 	print_debug = 0;
 	load_from_file = 0;
-	char *dvalue = NULL;
 	char *evalue = NULL;
 	char *fvalue = NULL;
 	char *ivalue = NULL;
@@ -35,6 +34,7 @@ int main (int argc, char **argv)
 	int Aflag = 0;
 	int qflag = 0;
 	int Pflag = 0;
+	int dflag = 0;
 
 	int index;
 	int c;
@@ -42,13 +42,10 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	while ((c = getopt (argc, argv, "d:e:f:i:H:I:lphFXqP")) != -1)	
+	while ((c = getopt (argc, argv, "e:f:i:H:I:lphFXqPd")) != -1)	
 	{		
 		switch (c)			
 		{
-			case 'd':
-				dvalue = optarg;
-				break;
 			case 'e':
 				evalue = optarg;
 				break;
@@ -66,6 +63,9 @@ int main (int argc, char **argv)
 			    break;
 			case 'H':
 				Hvalue = optarg;
+				break;
+			case 'd':
+				dflag = 1;
 				break;
 			case 'h':
 				hflag = 1;
@@ -86,9 +86,7 @@ int main (int argc, char **argv)
 				print_debug = 1;
 				break;
 			case '?':
-				if (optopt == 'd')
-					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
-				else if (optopt == 'e')
+				if (optopt == 'e')
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
 				else if (optopt == 'f')
 					fprintf (stderr, "Option -%c requires an argument.\n", optopt);
@@ -251,6 +249,9 @@ int main (int argc, char **argv)
 
 	if(Pflag)
 		fprintf (file_def, "#define PID\n");
+
+	if(dflag)
+		fprintf (file_def, "#define LOADEXEC_DLL\n");
 
 	fclose(file_def);
 

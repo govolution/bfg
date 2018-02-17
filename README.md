@@ -27,6 +27,7 @@ The purpose of make_bfg is to preconfigure a definition file (defs.h) so that th
 -P inject shellcode by PID as argument, call pwn.exe PID
 -I inject shellcode by image name, call for example: pwn.exe keepass.exe
 -l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt
+-d load and exec a dll, call with myexe.exe thedll.dll
 -f compile and execute shellcode into .exe, needs filename of shellcode file
 -X compile for 64 bit
 -p print debug information
@@ -64,6 +65,9 @@ Loads and execute a shellcode that is injected into a process. Therefore the nam
 
 build/build_hollowing_hello_exe.sh
 Hollow target process and insert payload executable (here a simple exe with a messagebox).
+
+build_win32_load_exec_dll.sh
+Build an exe file that loads & execs a dll.
 
 bfg_fabric.py
 -------------
