@@ -191,6 +191,8 @@ int main (int argc, char **argv)
 	{
 		printf("Write executable from %s to defs.h\n", Hvalue);
 		
+		unsigned char keyByte;
+		
 		if(xflag)
 		{
 			// Initialize RNG
@@ -198,7 +200,7 @@ int main (int argc, char **argv)
 			srand((unsigned) time(&t));
 		
 			// Generate random key byte
-			unsigned char keyByte = rand() % 256;
+			keyByte = rand() % 256;
 		}
 			
 		FILE *file_exe = fopen(Hvalue, "r");
