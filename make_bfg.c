@@ -220,7 +220,7 @@ int main (int argc, char **argv)
 		fprintf(file_def, "\nlong payloadSize = %ld;\n", currentSize);
 		
 		// Write keybyte value into defs.h
-		fprintf(file_df, "\nunsigned char keyByte = 0x%.2X;\n", keyByte);
+		fprintf(file_def, "\nunsigned char keyByte = 0x%.2X;\n", keyByte);
 				
 		// Set define
 		fprintf(file_def, "\n#define PROCESS_HOLLOWING\n");
