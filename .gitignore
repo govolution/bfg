@@ -1,3 +1,4 @@
 make_bfg
 payloads/hello.exe
+payloads/hello.dll
 defs.h
