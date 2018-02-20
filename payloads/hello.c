@@ -3,8 +3,8 @@
 // rundll32 hello.dll,main
 #include <windows.h>
 
-void main (void)
+void main (int argc, char **argv)
 {
-	MessageBoxW (NULL, L"Hello World!", L"hello", MB_OK | MB_ICONINFORMATION); 
+	MessageBoxA(NULL, GetCommandLine(), "hello", MB_OK | MB_ICONINFORMATION); 
 }
 
