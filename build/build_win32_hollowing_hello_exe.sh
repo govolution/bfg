@@ -11,7 +11,7 @@ strip payloads/hello.exe
 echo "" > defs.h
 # call make_bfg, compile payload into executable
 # set -x flag to use xor obfuscation
-./make_bfg -H  payloads/hello.exe -x
+./make_bfg -H payloads/hello.exe -x
 # compile 
 $win32_compiler -o bfg.exe bfg.c 
 strip bfg.exe
