@@ -297,6 +297,7 @@ void print_help()
 	printf("-H hollow target process and insert payload executable: pwn.exe svchost.exe\n");
 	printf("\t-H mypayload.exe to set payload to inserted into the hollowed process\n");
 	printf("\tSet -x flag to XOR obfuscate the payload with a random key byte\n");
+	printf("\tSet -X flag to specify that hollowing target is 64 bit\n");
 	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
 	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
