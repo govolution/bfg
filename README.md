@@ -19,20 +19,22 @@ $ gcc -o make_bfg make_bfg.c
 ```
 
 The purpose of make_bfg is to preconfigure a definition file (defs.h) so that the source code can be compiled in the next step. Let's have a look at the options from make_avet, examples will be given below:
-
--i inject
-	-i shellcode for injecting shellcode
+```
 -H hollow target process and insert payload executable: pwn.exe svchost.exe
 	-H mypayload.exe to set payload to inserted into the hollowed process
+	-x flag to XOR obfuscate the payload with a random key byte
+-i inject
+	-i shellcode for injecting shellcode
+	-i dll for injecting a dll
 -P inject shellcode by PID as argument, call pwn.exe PID
 -I inject shellcode by image name, call for example: pwn.exe keepass.exe
 -l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt
--d load and exec a dll, call with myexe.exe thedll.dll
 -f compile and execute shellcode into .exe, needs filename of shellcode file
 -X compile for 64 bit
 -p print debug information
 -q quiet mode (hide console window)
 -h help
+```
 
 Of course it is possible to run all commands step by step from command line. But it is strongly recommended to use build scripts or the bfg_fabric.py.
 
@@ -47,7 +49,7 @@ Here are some explained examples for building the .exe files from the build dire
 Examples
 --------
 Please refer the files in the build directory.
-
+```
 build/build_win32_meterpreter_rev_https_50xshikata.sh
 Loads and execute a shellcode, the shellcode is compiled into the .exe file.
 
@@ -68,6 +70,7 @@ Hollow target process and insert payload executable (here a simple exe with a me
 
 build_win32_load_exec_dll.sh
 Build an exe file that loads & execs a dll.
+```
 
 bfg_fabric.py
 -------------
