@@ -8,7 +8,7 @@
 msfvenom -p windows/messagebox -b '\x00' -f raw -a x86 --platform Windows > sc.bin
 # clean defs.h
 echo "" > defs.h
-# call make_avet, compile shellcode into the executable
+# call make_bfg, compile shellcode into the executable
 ./make_bfg -l -P
 # compile 
 $win32_compiler -o bfg.exe bfg.c

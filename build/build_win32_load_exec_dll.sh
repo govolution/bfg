@@ -8,7 +8,7 @@
 msfvenom -p windows/messagebox -b '\x00' -f dll -a x86 --platform Windows > hello.dll
 # clean defs.h
 echo "" > defs.h
-# call make_avet, compile shellcode into the executable
+# call make_bfg, compile shellcode into the executable
 ./make_bfg -d
 # compile 
 $win32_compiler -o bfg.exe bfg.c

