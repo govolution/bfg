@@ -75,3 +75,9 @@ Build an exe file that loads & execs a dll.
 bfg_fabric.py
 -------------
 bfg_fabric is an assistant, that loads all build scripts in the build directory (name has to be build*.sh) and then lets the user edit the settings line by line.
+
+Credits
+-------
+https://github.com/securestate/syringe
+https://github.com/tacticaljmp/humble-file-crypter
+
