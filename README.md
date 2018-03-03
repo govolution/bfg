@@ -50,26 +50,39 @@ Examples
 --------
 Please refer the files in the build directory.
 ```
-build/build_win32_meterpreter_rev_https_50xshikata.sh
-Loads and execute a shellcode, the shellcode is compiled into the .exe file.
-
-build/build_win32_meterpreter_rev_https_shikata_loadfile.sh 
-Loads and execute a shellcode from a file.
-
-build/build_win32_msgbox_inject_shellcode.sh
-Inject a shellcode into a process by PID.
-
-build/build_win32_msgbox_inject_shellcode_loadfile.sh
-Inject and load a shellcode into a process by PID.
-
-build/build_win32_msgbox_inject_shellcode_imagename.sh
-Loads and execute a shellcode that is injected into a process. Therefore the name of the process (imagename) has to be specified.
-
-build/build_hollowing_hello_exe.sh
+build_hollowing_hello_exe.sh
 Hollow target process and insert payload executable (here a simple exe with a messagebox).
 
 build_win32_load_exec_dll.sh
+Simply loads and execs a dll.
+
+build_win32_meterpreter_rev_https_50xshikata.sh
+Loads and execute a shellcode, the shellcode is compiled into the .exe file.
+
+build_win32_meterpreter_rev_https_shikata_loadfile.sh 
+Loads and execute a shellcode from a file.
+
+build_win32_msgbox_inject_dll_imagename.sh
+Inject a dll by the imagename.
+
+build_win32_msgbox_inject_dll.sh
+Inject a dll by the PID.
+
+build_win32_msgbox_inject_shellcode.sh
+Inject a shellcode into a process by PID.
+
+build_win32_msgbox_inject_shellcode_loadfile.sh
+Inject and load a shellcode into a process by PID.
+
+build_win32_msgbox_inject_shellcode_imagename.sh
+Loads and execute a shellcode that is injected into a process. Therefore the name of 
+the process (imagename) has to be specified.
+
+build_win32_load_exec_dll.sh
 Build an exe file that loads & execs a dll.
+
+build_win64_bind_tcp_inject_shellcode.sh
+Inject a 64bit shellcode into a 64bit process.
 ```
 
 bfg_fabric.py
