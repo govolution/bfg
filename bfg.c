@@ -123,7 +123,11 @@ int main (int argc, char **argv)
 		#ifdef LVALUE
 			tmp=atoi(argv[2]);
 		#endif
-		inject_sc_process(shellcode, tmp);
+		int r;	
+		r=inject_sc_process(shellcode, tmp);
+		#ifdef PRINT_DEBUG
+		printf("return from inject_sc_process, val: %d\n",r);
+		#endif
 	#endif
 	#endif
 	
