@@ -388,7 +388,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 					// Get image base of target process
 					if (GetThreadContext(PI.hThread, CTX) {
 						#ifndef X64
-							ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + 8), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
+							ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
 						#endif
 						#ifdef X64
 							ReadProcessMemory(PI.hProcess, (PVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
