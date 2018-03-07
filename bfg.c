@@ -382,7 +382,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 		
 				// Create new instance of target process		
 				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
-					CTX = (PCONTEXT) VirtualAlloc(NULL, sizeof(CTX), MEM_COMMIT, PAGE_READWRITE);
+					CTX = (PCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
 					CTX->ContextFlags = CONTEXT_FULL;
 					
 					// Get image base of target process
