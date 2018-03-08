@@ -66,7 +66,7 @@ build_win32_msgbox_inject_dll_imagename.sh
 Inject a dll by the imagename.
 
 build_win32_msgbox_inject_dll.sh
-Inject a dll by the PID.
+Inject a dll by the PID. Call with bfg.exe yourdll.dll PID
 
 build_win32_msgbox_inject_shellcode.sh
 Inject a shellcode into a process by PID.
