@@ -305,7 +305,7 @@ void print_help()
 	printf("\t-i shellcode for injecting shellcode\n");
 	printf("\t-i dll for injecting a dll\n");
 	//printf("\t-i exe for injecting an executable\n");	
-	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
+	printf("-P inject shellcode by PID as argument, call bfg.exe PID for sc and bfg.exe my.dll PID for dll injection\n");
 	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.bin\n");
 	printf("-f compile and execute shellcode into .exe, needs filename of shellcode file\n");
