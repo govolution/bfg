@@ -81,6 +81,9 @@ the process (imagename) has to be specified.
 build_win32_load_exec_dll.sh
 Build an exe file that loads & execs a dll.
 
+build_win64_bind_tcp_inject_dll.sh
+Inject a dll by the PID. Call with bfg.exe yourdll.dll PID
+
 build_win64_bind_tcp_inject_shellcode.sh
 Inject a 64bit shellcode into a 64bit process.
 ```
