@@ -42,31 +42,26 @@ bool apply_reloc_block(BASE_RELOCATION_ENTRY *block, SIZE_T entriesNum, DWORD pa
 			break;
 		}
 		
-		#ifdef X64
-			if ((type != RELOC_32BIT_FIELD) && (type != RELOC_64BIT_FIELD)) {
-				printf("Not supported relocations format at %d: %d\n", (int) i, type);
-				return false;
-			}
-				
-			if(type == RELOC_64BIT_FIELD) {
-				DWORD64* relocateAddr64 = (DWORD64*) ((ULONG_PTR) modulePtr + page + offset);
-				(*relocateAddr64) = (DWORD64) (*relocateAddr64) - ((ULONG_PTR) oldBase) + newBase;
-				entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));			
-			} else if(type == RELOC_32BIT_FIELD) {
+		switch(type) {
+			case RELOC_32BIT_FIELD:
+				printf("\ttype 4");
 				DWORD* relocateAddr32 = (DWORD*) ((ULONG_PTR) modulePtr + page + offset);
-				(*relocateAddr32) = (DWORD) (*relocateAddr32) - ((ULONG_PTR) oldBase) + newBase;
-				entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));			
-			}					
-		#else
-			if (type != RELOC_32BIT_FIELD) {
+				(*relocateAddr32) = (DWORD) (*relocateAddr32) - oldBase + newBase;
+				entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));	
+				break;
+			#ifdef X64
+				case RELOC_64BIT_FIELD:
+					printf("\ttype 10");
+					ULONGLONG* relocateAddr64 = (ULONGLONG*) ((ULONG_PTR) modulePtr + page + offset);
+					(*relocateAddr64) = ((ULONGLONG) (*relocateAddr64)) - oldBase + newBase;
+					entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));	
+					break;
+			#endif	
+			default:
 				printf("Not supported relocations format at %d: %d\n", (int) i, type);
 				return false;
-			}
+		}								
 				
-			DWORD* relocateAddr32 = (DWORD*) ((ULONG_PTR) modulePtr + page + offset);
-			(*relocateAddr32) = (DWORD) (*relocateAddr32) - ((ULONG_PTR) oldBase) + newBase;
-			entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));					
-		#endif			
 	}
 	//printf("[+] Applied %d relocations\n", (int) i);
 	return true;		
@@ -90,16 +85,10 @@ bool apply_relocations(ULONGLONG newBase, ULONGLONG oldBase, PVOID modulePtr)
         reloc = (IMAGE_BASE_RELOCATION*)(relocAddr + parsedSize + (ULONG_PTR) modulePtr);
         parsedSize += reloc->SizeOfBlock;
 
-		#ifdef X64
-        	if ((((PVOID) ((DWORD64) reloc->VirtualAddress)) == NULL) || reloc->SizeOfBlock == 0) {
-            	continue;
-        	}
-		#else
-			if ((((PVOID) reloc->VirtualAddress) == NULL) || reloc->SizeOfBlock == 0) {
-            	continue;
-        	}
-		#endif
-
+		if ((reloc->VirtualAddress == NULL) || (reloc->SizeOfBlock == 0)) {
+           	continue;
+        }
+		
         //printf("RelocBlock: %x %x\n", reloc->VirtualAddress, reloc->SizeOfBlock);
         
         size_t entriesNum = (reloc->SizeOfBlock - 2 * sizeof(DWORD))  / sizeof(WORD);
