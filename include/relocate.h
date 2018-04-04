@@ -84,11 +84,17 @@ bool apply_relocations(ULONGLONG newBase, ULONGLONG oldBase, PVOID modulePtr)
     while (parsedSize < maxSize) {
         reloc = (IMAGE_BASE_RELOCATION*)(relocAddr + parsedSize + (ULONG_PTR) modulePtr);
         parsedSize += reloc->SizeOfBlock;
-
-		if ((((ULONGLONG*) ((ULONGLONG) reloc->VirtualAddress)) == NULL) || (reloc->SizeOfBlock == 0)) {
-           	continue;
-        }
 		
+		#ifdef X64
+			if ((((ULONGLONG*) ((ULONGLONG) reloc->VirtualAddress)) == NULL) || (reloc->SizeOfBlock == 0)) {
+				continue;
+			}
+		#else
+			if ((((DWORD*) reloc->VirtualAddress) == NULL) || (reloc->SizeOfBlock == 0)) {
+				continue;
+			}
+		#endif
+				
         //printf("RelocBlock: %x %x\n", reloc->VirtualAddress, reloc->SizeOfBlock);
         
         size_t entriesNum = (reloc->SizeOfBlock - 2 * sizeof(DWORD))  / sizeof(WORD);
