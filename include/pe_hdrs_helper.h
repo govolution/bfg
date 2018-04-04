@@ -46,3 +46,19 @@ IMAGE_DATA_DIRECTORY* get_pe_directory(PVOID pe_buffer, DWORD dir_id)
 	
     return peDir;
 }
+
+
+bool is32Bit(PVOID payloadData) {
+	PIMAGE_DOS_HEADER payloadDosHeader;
+	PIMAGE_NT_HEADERS payloadNtHeader;
+	
+	// Get payload headers
+	payloadDosHeader = (PIMAGE_DOS_HEADER) payloadData;
+	payloadNtHeader = (PIMAGE_NT_HEADERS) ((BYTE *) payloadDosHeader + payloadDosHeader->e_lfanew);
+	
+	if(payloadNtHeader->FileHeader.Machine == IMAGE_FILE_MACHINE_I386) {
+		return true;
+	} else {
+		return false;
+	}	
+}
