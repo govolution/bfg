@@ -32,6 +32,8 @@ bool has_relocations(BYTE *pe_buffer)
 
 bool apply_reloc_block(BASE_RELOCATION_ENTRY *block, SIZE_T entriesNum, DWORD page, ULONGLONG oldBase, ULONGLONG newBase, PVOID modulePtr)
 {
+	DWORD *relocateAddr32;
+	ULONGLONG *relocateAddr64;
 	BASE_RELOCATION_ENTRY* entry = block;
 	SIZE_T i = 0;
 	for (i = 0; i < entriesNum; i++) {
@@ -41,18 +43,16 @@ bool apply_reloc_block(BASE_RELOCATION_ENTRY *block, SIZE_T entriesNum, DWORD pa
 		if (entry == NULL || type == 0) {
 			break;
 		}
-		
+				
 		switch(type) {
 			case RELOC_32BIT_FIELD:
-				printf("\ttype 4");
-				DWORD* relocateAddr32 = (DWORD*) ((ULONG_PTR) modulePtr + page + offset);
+				relocateAddr32 = (DWORD*) ((ULONG_PTR) modulePtr + page + offset);
 				(*relocateAddr32) = (DWORD) (*relocateAddr32) - oldBase + newBase;
 				entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));	
 				break;
 			#ifdef X64
 				case RELOC_64BIT_FIELD:
-					printf("\ttype 10");
-					ULONGLONG* relocateAddr64 = (ULONGLONG*) ((ULONG_PTR) modulePtr + page + offset);
+					relocateAddr64 = (ULONGLONG*) ((ULONG_PTR) modulePtr + page + offset);
 					(*relocateAddr64) = ((ULONGLONG) (*relocateAddr64)) - oldBase + newBase;
 					entry = (BASE_RELOCATION_ENTRY*)((ULONG_PTR) entry + sizeof(WORD));	
 					break;
@@ -85,7 +85,7 @@ bool apply_relocations(ULONGLONG newBase, ULONGLONG oldBase, PVOID modulePtr)
         reloc = (IMAGE_BASE_RELOCATION*)(relocAddr + parsedSize + (ULONG_PTR) modulePtr);
         parsedSize += reloc->SizeOfBlock;
 
-		if ((reloc->VirtualAddress == NULL) || (reloc->SizeOfBlock == 0)) {
+		if ((((ULONGLONG*) ((ULONGLONG) reloc->VirtualAddress)) == NULL) || (reloc->SizeOfBlock == 0)) {
            	continue;
         }
 		
