@@ -5,7 +5,11 @@
 #pragma once
 
 #include <Windows.h>
+#include <stdio.h>
 
+#define false 0
+#define true 1
+typedef int bool;
 
 IMAGE_NT_HEADERS* get_nt_hdrs(BYTE *pe_buffer)
 {
@@ -26,16 +30,20 @@ IMAGE_NT_HEADERS* get_nt_hdrs(BYTE *pe_buffer)
 
 IMAGE_DATA_DIRECTORY* get_pe_directory(PVOID pe_buffer, DWORD dir_id)
 {
-    if (dir_id >= IMAGE_NUMBEROF_DIRECTORY_ENTRIES) return NULL;
-
+    if (dir_id >= IMAGE_NUMBEROF_DIRECTORY_ENTRIES) {		
+		return NULL;
+	}
+		
     //fetch relocation table from current image:
     PIMAGE_NT_HEADERS nt_headers = get_nt_hdrs((BYTE*) pe_buffer);
-    if (nt_headers == NULL) return NULL;
+    if (nt_headers == NULL) {		
+		return NULL;
+	}
 
     IMAGE_DATA_DIRECTORY* peDir = &(nt_headers->OptionalHeader.DataDirectory[dir_id]);
 	
 	#ifdef X64
-		if (((PVOID) ((DWORD64) peDir->VirtualAddress)) == NULL) {
+		if (((PVOID) ((DWORD64) peDir->VirtualAddress)) == NULL) {			
 			return NULL;
 		}
 	#else
