@@ -278,7 +278,7 @@ void newRunPE64(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	for(int i = 0; i < payloadNtHeader->FileHeader.NumberOfSections; i++) {
 		payloadSectionHeader = (PIMAGE_SECTION_HEADER) ((BYTE *) payloadNtHeader + sizeof(IMAGE_NT_HEADERS) + (i * sizeof(IMAGE_SECTION_HEADER)));
 		
-		// No checking for SizeOfRawData == 0 needed because memcpy automatically skips copying without generating errors in that case
+		// No checking for SizeOfRawData == 0 needed because memcpy automatically skips copying printf("\ttype 10");without generating errors in that case
 		memcpy((BYTE *) localPayloadCopy + payloadSectionHeader->VirtualAddress, (BYTE *) payloadData + payloadSectionHeader->PointerToRawData, payloadSectionHeader->SizeOfRawData);
 		printf("Wrote section %d to local copy, virtual address offset of section is 0x%lX.\n", i, payloadSectionHeader->VirtualAddress);		
 	}	
