@@ -42,9 +42,6 @@ DWORD inject_sc_process(unsigned char *shellcode, DWORD pid);
 #ifdef IMAGE
 DWORD get_pid_by_name(char *imgname);
 #endif
-#ifdef PROCESS_HOLLOWING
-void newRunPE(LPSTR szFilePath, PVOID pFile, LPTSTR commandLine);
-#endif
 
 int main (int argc, char **argv)
 {
