@@ -216,7 +216,8 @@ int main (int argc, char **argv)
 		FILE *file_exe = fopen(Hvalue, "r");
 		FILE *file_def = fopen("defs.h", "a");
 		
-		int currentByte = 0;	// use integer type to serve the needs of fgetc
+		int currentChar = 0;
+		unsigned char currentByte = 0;
 		long currentSize = 0;
 	
 		// Read data from excutable file and write bytewise into array "payload" in defs.h
@@ -227,9 +228,14 @@ int main (int argc, char **argv)
 		unsigned char savedBits = 0;
 		for(int i = 0;;i++) 
 		{
-			if ((currentByte = fgetc(file_exe)) == EOF) break;			
+			if ((currentChar = fgetc(file_exe)) == EOF) break;			
 			if (i != 0) fprintf(file_def, ",");
 			if ((i % 12) == 0) fprintf(file_def, "\n\t");
+			
+			// Make extra conversion because bitwise operations get messy on signed integer type
+			// Keep integer type while checking for EOF because EOF is a negative, implementation-dependent value
+			currentByte = (unsigned char) currentChar;
+			
 			if(xflag) {
 				// XOR the byte with the generated key before writing it into the array
 				currentByte = currentByte ^ keyByte0;
@@ -242,14 +248,12 @@ int main (int argc, char **argv)
 						currentByte = currentByte ^ keyByte0;		
 						break;						
 					case 1:
-						// INC - DEC (avoid overflow)
-						if(currentByte != 0xFF) {
-							currentByte++;
-						}
+						// INC - DEC
+						currentByte++;						
 						break;						
 					case 2:
 						// NOT - NOT
-						currentByte = ~currentByte;
+						currentByte = currentByte ^ 0xFF;
 						break;						
 					case 3:
 						// Compute keymod = keyByte1 mod 8
@@ -264,7 +268,7 @@ int main (int argc, char **argv)
 						break;
 				}				
 			}
-			fprintf(file_def, "0x%.2X", (unsigned char) currentByte);
+			fprintf(file_def, "0x%.2X", currentByte);
 			currentSize++;
 		}
 		

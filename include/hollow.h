@@ -25,14 +25,12 @@ void altDeobfuscate(unsigned char* address, long len, unsigned char keyByte0, un
 				address[i] = address[i] ^ keyByte0;
 				break;
 			case 1:
-				// INC - DEC (avoid underflow)
-				if(address[i] > 0) {
-					address[i] = address[i] - 1;
-				}
+				// INC - DEC				
+				address[i] = address[i] - 1;				
 				break;
 			case 2:
 				// NOT - NOT
-				address[i] = ~address[i]; 
+				address[i] = address[i] ^ 0xFF; 
 				break;
 			case 3:
 				// Compute keymod = keyByte1 mod 8
