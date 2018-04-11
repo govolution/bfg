@@ -5,6 +5,13 @@
 #include "relocate.h"
 
 
+void deobfuscate(unsigned char *address, long len, unsigned char keyByte) {
+	for(long i=0; i < len; i++) {
+		address[i] = address[i] ^ keyByte;
+	}	
+}
+
+
 typedef LONG (WINAPI *NtUnmapViewOfSection) (HANDLE ProcessHandle, PVOID BaseAddress);
 
 #ifndef X64
