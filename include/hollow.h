@@ -12,6 +12,43 @@ unsigned char* deobfuscate(unsigned char *address, long len, unsigned char keyBy
 	return address;
 }
 
+void altDeobfuscate(unsigned char* address, long len, unsigned char keyByte0, unsigned char keyByte1) {
+	unsigned int imod = 0;
+	unsigned int keymod = 0;
+	unsigned char savedBits = 0;
+	
+	for(long i=0; i < len; i++) {
+		imod = i%4;
+		switch(imod) {
+			case 0:
+				// XOR - XOR (keyByte0)
+				address[i] = address[i] ^ keyByte0;
+				break;
+			case 1:
+				// INC - DEC (avoid underflow)
+				if(address[i] > 0) {
+					address[i] = address[i] - 1;
+				}
+				break;
+			case 2:
+				// NOT - NOT
+				address[i] = ~address[i]; 
+				break;
+			case 3:
+				// Compute keymod = keyByte1 mod 8
+				// Swap the keymod leftmost bits with the other bits of the byte
+				keymod = keyByte1 % 8;
+				savedBits = address[i] >> (8 - keymod);
+				address[i] = address[i] << keymod;
+				address[i] = address[i] ^ savedBits;
+				break;
+			default:
+				// default case should never happen - do nothing
+				break;
+		}
+	}
+}
+
 
 typedef LONG (WINAPI *NtUnmapViewOfSection) (HANDLE ProcessHandle, PVOID BaseAddress);
 

