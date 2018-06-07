@@ -4,14 +4,11 @@
 # you can edit the compiler in build/global_win32.sh
 # or enter $win32_compiler="mycompiler" here
 . build/global_win32.sh
-# build 32 bit hello executable
-$win32_compiler -o payloads/hello.exe payloads/hello.c
-strip payloads/hello.exe
 # assume empty defs.h, cleanup
 echo "" > defs.h
 # call make_bfg, compile payload into executable
 # set -x flag to use xor obfuscation
-./make_bfg -H payloads/hello.exe -a
+./make_bfg -H payloads/calc.exe -x
 # compile 
 $win32_compiler -o bfg.exe bfg.c 
 strip bfg.exe
