@@ -1,5 +1,5 @@
 /*
-Author: Daniel Sauder
+Authors: Daniel Sauder, Florian Saager
 License: https://www.gnu.org/licenses/gpl.txt or LICENSE file
 Web: https://github.com/govolution/bfg
 */
@@ -182,6 +182,14 @@ int main (int argc, char **argv)
 			fprintf (file_def, "#define INJECT_SHELLCODE\n");
 			fclose (file_def);
 		}
+		else if (strcmp(ivalue, "dll")==0)
+		{
+			FILE *file_def;
+			file_def = fopen ("defs.h","a");
+			fprintf (file_def, "#define INJECT_DLL\n");
+			fclose (file_def);
+
+		}	
 		else
 			printf("-i %s unknown option\n");
 	}
@@ -292,15 +300,17 @@ void print_help()
 	printf("Options:\n");
 	printf("-i inject\n");
 	printf("\t-i shellcode for injecting shellcode\n");
-	//printf("\t-i dll for injecting a dll\n");
+	printf("\t-i dll for injecting a dll\n");
 	//printf("\t-i exe for injecting an executable\n");	
+<<<<<<< HEAD
 	printf("-H hollow target process and insert payload executable: pwn.exe svchost.exe\n");
-	printf("\t-H mypayload.exe to set payload to inserted into the hollowed process\n");
 	printf("\tSet -x flag to XOR obfuscate the payload with a random key byte\n");
 	printf("\tSet -X flag to specify that hollowing target is 64 bit\n");
-	printf("-P inject shellcode by PID as argument, call pwn.exe PID\n");
+=======
+	printf("-P inject shellcode by PID as argument, call bfg.exe PID for sc and bfg.exe my.dll PID for dll injection\n");
+>>>>>>> b37c14277053582d8143c1655ba7c5a89752e5b5
 	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
-	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.txt\n");
+	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.bin\n");
 	printf("-f compile and execute shellcode into .exe, needs filename of shellcode file\n");
 	printf("-X compile for 64 bit\n");
 	printf("-p print debug information\n");
@@ -320,7 +330,7 @@ char output[] =
 "  \\ \\  \\|\\  \\ \\  \\_| \\ \\  \\|\\  \\ \n"
 "   \\ \\_______\\ \\__\\   \\ \\_______\\ \n"
 "    \\|_______|\\|__|    \\|_______| \n"
-		"\n\nBinary Fancy Generator by Daniel Sauder\n"
+		"\n\nBinary Fancy Generator by Daniel Sauder, Florian Saager\n"
 		"use -h for help\n\n";
 	printf("\n%s", output);
 }
