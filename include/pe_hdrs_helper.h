@@ -1,5 +1,6 @@
-// Taken from https://github.com/hasherezade/demos (and probably modified)
-// Credits go to hasherezade
+// Taken from https://github.com/hasherezade/demos
+// I modified it though.
+// Credits go to hasherezade!
 
 
 #pragma once
