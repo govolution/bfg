@@ -353,11 +353,11 @@ void print_help()
 	printf("\t-i shellcode for injecting shellcode\n");
 	printf("\t-i dll for injecting a dll\n");
 	//printf("\t-i exe for injecting an executable\n");	
-	printf("-H hollow target process and insert payload executable: pwn.exe svchost.exe\n");
-	printf("\tSet -x flag to XOR obfuscate the payload with a random key byte\n");
+	printf("-H Hollow target process and insert payload executable. Usage: bfg.exe target.exe\n");
+	printf("\tSet -x flag to XOR-obfuscate the payload with a random key byte\n");
 	printf("\tSet -a flag to use alternative obfuscation which is a little more complex\n");
-	printf("\tIt would be unwise to use both obfuscations at once. You have been warned\n");
-	printf("\tSet -X flag to specify that hollowing target is 64 bit\n");
+	printf("\tIt would be unwise to use both obfuscations at once. You have been warned...\n");
+	printf("\tSet -X flag to specify that the hollowing target is a 64 bit process\n");
 	printf("-P inject shellcode by PID as argument, call bfg.exe PID for sc and bfg.exe my.dll PID for dll injection\n");
 	printf("-I inject shellcode by image name, call for example: pwn.exe keepass.exe\n");	
 	printf("-l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.bin\n");
