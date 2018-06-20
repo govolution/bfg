@@ -1,20 +1,28 @@
 #!/bin/bash          
-# simple example script for 32 bit process hollowing test, injecting hello world message box
-# include script containing the compiler var $win32_compiler
-# you can edit the compiler in build/global_win32.sh
-# or enter $win32_compiler="mycompiler" here
+# This is an example script to test hollowing against a 32 bit target process, injecting a hello world message box.
+#
+# Include predefined win32 compiler.
+# >>> You can edit the compiler in build/global_win32.sh
+# >>> or enter $win32_compiler="mycompiler" here
 . build/global_win32.sh
-# build 32 bit hello executable
+# Build 32 bit hello executable
 $win32_compiler -o payloads/hello.exe payloads/hello.c
+# Remove debug symbols from payload
 strip payloads/hello.exe
-# assume empty defs.h, cleanup
+# Assume empty defs.h, cleanup
 echo "" > defs.h
-# call make_bfg, compile payload into executable
-# set -x flag to use xor obfuscation
+# Call make_bfg and compile the payload into the executable.
+# -H switch enables hollowing functionality
+# Set -x flag to use xor obfuscation on the payload
+# Set -a flag to use alternative encoding, which is a little more complex
 ./make_bfg -H payloads/hello.exe -a
-# compile 
+# Compile 
 $win32_compiler -o bfg.exe bfg.c 
+# Remove debug symbols from generated executable
 strip bfg.exe
-# cleanup
+# Cleanup
 echo "" > defs.h
-# call like C:\> bfg "c:\Program Files (x86)\KeePass Password Safe\KeePass.exe"
+#
+# Example usage of generated executable:
+# bfg.exe target.exe
+# target.exe is the target executable to be hollowed.
