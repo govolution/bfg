@@ -112,5 +112,7 @@ https://github.com/tacticaljmp/hollowing-presentation
 Credits
 -------
 https://github.com/securestate/syringe
+
 https://github.com/tacticaljmp/humble-file-crypter
+
 https://github.com/hasherezade/demos
