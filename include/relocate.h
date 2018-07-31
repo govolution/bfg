@@ -14,6 +14,13 @@
 #define true 1
 typedef int bool;
 
+// Use with double parentheses
+#ifdef PRINT_DEBUG
+	#define DEBUG_PRINT(x) printf x
+#else
+	#define DEBUG_PRINT(x) do {} while (0)
+#endif
+
 
 typedef struct _BASE_RELOCATION_ENTRY {
     WORD Offset : 12;
@@ -59,7 +66,7 @@ bool apply_reloc_block(BASE_RELOCATION_ENTRY *block, SIZE_T entriesNum, DWORD pa
 					break;
 			#endif	
 			default:
-				printf("Not supported relocations format at %d: %d\n", (int) i, type);
+				DEBUG_PRINT(("Not supported relocations format at %d: %d\n", (int) i, type));
 				return false;
 		}								
 				
@@ -73,7 +80,7 @@ bool apply_relocations(ULONGLONG newBase, ULONGLONG oldBase, PVOID modulePtr)
 {
     IMAGE_DATA_DIRECTORY* relocDir = get_pe_directory(modulePtr, IMAGE_DIRECTORY_ENTRY_BASERELOC);
     if (relocDir == NULL) {
-        printf ("Cannot relocate - application have no relocation table!\n");
+        DEBUG_PRINT(("Cannot relocate - application have no relocation table!\n"));
         return false;
     }
     DWORD maxSize = relocDir->Size;
