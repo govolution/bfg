@@ -32,6 +32,7 @@ Web: https://github.com/govolution/bfg
 	#include "include/hollow.h"
 #endif
 
+
 int get_filesize(char *fvalue);
 unsigned char* load_file(char *fvalue, unsigned char *buf, int size2);
 void exec_shellcode(unsigned char *shellcode);

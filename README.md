@@ -2,10 +2,10 @@ BFG
 ===
 
 What & Why:
-- bfg is a tool for executing and injecting shellcode/executables
+- bfg is a tool that helps you to inject and execute shellcode/executables
 - it uses some concepts from https://github.com/govolution/avet
-- not meant to be another antivirus evasion tool
-- this readme applies for Kali 2 (64bit) and tdm-gcc
+- it is not meant to be another antivirus evasion tool
+- this README applies to the use on Kali 2 (64bit) and tdm-gcc
 
 How to install tdm-gcc with wine:
 https://govolution.wordpress.com/2017/02/04/using-tdm-gcc-with-kali-2/
@@ -13,7 +13,7 @@ https://govolution.wordpress.com/2017/02/04/using-tdm-gcc-with-kali-2/
 
 How to use make_bfg and build scripts
 -------------------------------------
-Even though a prebuilt make_bfg executable is given in the repository, you should compile again for your system:
+Even though a prebuilt make_bfg executable is given in the repository, you should compile it for your system:
 
 ```
 $ gcc -o make_bfg make_bfg.c
