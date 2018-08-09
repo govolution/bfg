@@ -22,18 +22,18 @@ $ gcc -o make_bfg make_bfg.c
 The purpose of make_bfg is to preconfigure a definition file (defs.h) so that the source code can be compiled in the next step. Let's have a look at the options of make_bfg, examples will be given further below:
 ```
 -i inject
-	-i shellcode for injecting shellcode
-	-i dll for injecting a dll
+	-i shellcode to be used for shellcode injection
+	-i dll dll injection
 -H Hollow target process and insert payload executable. Usage: bfg.exe target.exe
-	Set -x flag to XOR-obfuscate the payload with a random key byte
+	Set -x flag to XOR-obfuscate the payload with a random byte key
 	Set -a flag to use alternative obfuscation which is a little more complex
 	It would be unwise to use both obfuscations at once. You have been warned...
 	Set -X flag to specify that the hollowing target is a 64 bit process
 -P inject shellcode by PID as argument, call bfg.exe PID for sc and bfg.exe my.dll PID for dll injection
 -I inject shellcode by image name, call for example: pwn.exe keepass.exe
 -l load and exec shellcode from given file, call is with mytrojan.exe myshellcode.bin
--f compile and execute shellcode into .exe, needs filename of shellcode file
--X compile for 64 bit
+-f compile and insert shellcode into .exe, needs filename of shellcode file
+-X compile for amd64 architecture
 -p print debug information
 -q quiet mode (hide console window)
 -h help
