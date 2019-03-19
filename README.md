@@ -1,6 +1,12 @@
 BFG
 ===
 
+Update
+======
+BFG is now merged into AVET: 
+https://github.com/govolution/avet/
+
+
 What & Why:
 - bfg is a tool that helps you to inject and execute shellcode/executables
 - it uses some concepts from https://github.com/govolution/avet
